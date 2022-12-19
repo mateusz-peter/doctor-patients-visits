@@ -22,6 +22,8 @@ repositories {
 }
 
 extra["testcontainersVersion"] = "1.17.6"
+extra["kotestVersion"] = "5.5.4"
+extra["springmockkVersion"] = "4.0.0"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
@@ -34,16 +36,20 @@ dependencies {
 	runtimeOnly("org.postgresql:postgresql")
 	runtimeOnly("org.postgresql:r2dbc-postgresql")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+		exclude(module = "mockito-core")
+	}
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.testcontainers:postgresql")
 	testImplementation("org.testcontainers:r2dbc")
+	testImplementation("com.ninja-squad:springmockk:${property("springmockkVersion")}")
 }
 
 dependencyManagement {
 	imports {
 		mavenBom("org.testcontainers:testcontainers-bom:${property("testcontainersVersion")}")
+		mavenBom("io.kotest:kotest-bom:${property("kotestVersion")}")
 	}
 }
 
