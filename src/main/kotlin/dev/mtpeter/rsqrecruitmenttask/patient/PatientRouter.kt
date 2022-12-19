@@ -13,6 +13,7 @@ class PatientRouter(
     fun router() = coRouter {
         GET("/patients", patientHandler::getAllPatients)
         GET("/patients/{id}", patientHandler::getPatientById)
+        POST("/patients", patientHandler::saveNewPatient)
     }
 }
 
@@ -31,5 +32,13 @@ class PatientHandler(
         val patient = patientRepository.findById(id) ?: return ServerResponse.notFound().buildAndAwait()
 
         return ServerResponse.ok().bodyValueAndAwait(patient)
+    }
+
+    suspend fun saveNewPatient(request: ServerRequest): ServerResponse {
+        val patientDTO = request.awaitBody<PatientDTO>()
+        val saved = patientRepository.save(patientDTO.toPatient())
+
+        return ServerResponse.created(request.uriBuilder().path("/${saved.id}").build())
+            .bodyValueAndAwait(saved)
     }
 }
