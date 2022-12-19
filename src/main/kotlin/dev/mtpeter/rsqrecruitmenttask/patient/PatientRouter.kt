@@ -1,16 +1,17 @@
 package dev.mtpeter.rsqrecruitmenttask.patient
 
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 
-@Component
-class PatientRouter(
-    private val patientHandler: PatientHandler
-) {
+@Configuration
+class PatientRouter {
 
     @Bean
-    fun router() = coRouter {
+    fun router(
+        patientHandler: PatientHandler
+    ) = coRouter {
         GET("/patients", patientHandler::getAllPatients)
         GET("/patients/{id}", patientHandler::getPatientById)
         POST("/patients", patientHandler::saveNewPatient)

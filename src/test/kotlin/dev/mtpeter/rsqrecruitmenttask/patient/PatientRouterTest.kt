@@ -9,10 +9,11 @@ import org.springframework.test.web.reactive.server.WebTestClient
 
 class PatientRouterTest() : BehaviorSpec() {
 
-    private val patientRepository: PatientRepository = mockk<PatientRepository>()
+    private val patientRepository: PatientRepository = mockk()
     private val patientHandler = PatientHandler(patientRepository)
-    private val patientRouter = PatientRouter(patientHandler)
-    private val webTestClient = WebTestClient.bindToRouterFunction(patientRouter.router()).build()
+    private val patientRouter = PatientRouter()
+    private val webTestClient = WebTestClient
+        .bindToRouterFunction(patientRouter.router(patientHandler)).build()
 
     override fun extensions() = listOf(SpringExtension)
     override fun isolationMode() = IsolationMode.InstancePerTest
