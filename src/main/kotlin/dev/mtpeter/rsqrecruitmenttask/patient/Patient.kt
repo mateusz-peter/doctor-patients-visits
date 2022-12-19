@@ -1,0 +1,12 @@
+package dev.mtpeter.rsqrecruitmenttask.patient
+
+import org.springframework.data.relational.core.mapping.Column
+import org.springframework.data.relational.core.mapping.Table
+
+@Table("patient")
+data class Patient(
+    val id: Long?,
+    @Column("first_name") val firstName: String,
+    @Column("last_name") val lastName: String,
+    val address: String
+)
