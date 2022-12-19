@@ -41,6 +41,13 @@ class PatientRouterTest() : BehaviorSpec() {
                         .expectStatus().isNotFound
                 }
             }
+
+            `when`("GET Request on /patient/Jan") {
+                then("Bad Request") {
+                    webTestClient.get().uri("/patients/Jan").exchange()
+                        .expectStatus().isBadRequest
+                }
+            }
         }
 
         given("Patients at id=1 and id=2") {
