@@ -1,22 +1,21 @@
 package dev.mtpeter.rsqrecruitmenttask.patient
 
-import io.kotest.core.extensions.Extension
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.extensions.spring.SpringExtension
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
 import org.springframework.test.web.reactive.server.WebTestClient
 
 class PatientRouterTest() : BehaviorSpec() {
 
-    private val patientRepository: PatientRepository = mockk()
+    private val patientRepository: PatientRepository = mockk<PatientRepository>()
     private val patientHandler = PatientHandler(patientRepository)
     private val patientRouter = PatientRouter(patientHandler)
     private val webTestClient = WebTestClient.bindToRouterFunction(patientRouter.router()).build()
 
-    override fun extensions(): List<Extension> = listOf(SpringExtension)
+    override fun extensions() = listOf(SpringExtension)
+    override fun isolationMode() = IsolationMode.InstancePerTest
 
     init {
 
@@ -35,6 +34,7 @@ class PatientRouterTest() : BehaviorSpec() {
                         .isEqualTo(examplePatient)
                 }
             }
+
             `when`("GET Request on /patient/2") {
                 then("Request is replied with NotFound") {
                     webTestClient.get().uri("/patients/2").exchange()
@@ -54,6 +54,37 @@ class PatientRouterTest() : BehaviorSpec() {
                         .expectStatus().isOk
                         .expectBodyList(Patient::class.java)
                         .contains(examplePatient1, examplePatient2)
+                }
+            }
+        }
+
+        given("POST Request on /patients") {
+
+            `when`("a new Patient in body") {
+                val postBody = PatientDTO("Jan", "Nowak-Jeziorański", "Radio Wolna Europa")
+                coEvery { patientRepository.save(postBody.toPatient()) } returns postBody.toPatient(1)
+
+                then("We get Created with proper Location Header and saved object with its id") {
+
+                    webTestClient.post().uri("/patients").bodyValue(postBody)
+                        .exchange()
+                        .expectStatus().isCreated
+                        .expectHeader().location("/patients/1")
+                        .expectBody(Patient::class.java)
+                        .isEqualTo(postBody.toPatient(1))
+
+                    coVerify(exactly = 1) { patientRepository.save(postBody.toPatient()) }
+                }
+            }
+
+            `when`("a garbage in body") {
+                val postBody = mapOf("firstName" to "Jan", "lastName" to "Kowalski")
+
+                then("We get BadRequest and no object is saved") {
+                    webTestClient.post().uri("/patients").bodyValue(postBody)
+                        .exchange()
+                        .expectStatus().isBadRequest
+                    verify { patientRepository wasNot called }
                 }
             }
         }

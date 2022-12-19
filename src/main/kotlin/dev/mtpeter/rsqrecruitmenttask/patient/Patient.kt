@@ -10,3 +10,11 @@ data class Patient(
     @Column("last_name") val lastName: String,
     val address: String
 )
+
+data class PatientDTO(
+    val firstName: String,
+    val lastName: String,
+    val address: String
+) {
+    fun toPatient(id: Long? = null) = Patient(id, firstName, lastName, address)
+}
