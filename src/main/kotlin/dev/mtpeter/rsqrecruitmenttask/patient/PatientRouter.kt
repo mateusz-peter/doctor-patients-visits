@@ -48,7 +48,7 @@ class PatientHandler(
         val id = request.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
         val patientDTO = request.awaitBody<PatientDTO>()
 
-        val exists = patientRepository.existsById(1)
+        val exists = patientRepository.existsById(id)
         if(!exists) return ServerResponse.notFound().buildAndAwait()
 
         val saved = patientRepository.save(patientDTO.toPatient(id))

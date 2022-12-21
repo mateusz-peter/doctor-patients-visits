@@ -117,6 +117,7 @@ class PatientRouterTest() : BehaviorSpec() {
                     coVerify(exactly = 1) { patientRepository.save(putPatientDTO.toPatient(1)) }
                 }
             }
+
             `when`("patient/1 exists; Invalid body") {
                 coEvery { patientRepository.existsById(1) } returns true
 
