@@ -153,5 +153,38 @@ class PatientRouterTest() : BehaviorSpec() {
                 }
             }
         }
+
+        given("DELETE Request on /patients/{id}") {
+
+            `when`("/patient/1 does exist") {
+                coEvery { patientRepository.existsById(1) } returns true
+                coEvery { patientRepository.deleteById(1) } just Runs
+                then("Patient is deleted, got OK") {
+                    webTestClient.delete().uri("/patients/1")
+                        .exchange()
+                        .expectStatus().isOk
+                    coVerify(exactly = 1) { patientRepository.existsById(1) }
+                    coVerify(exactly = 1) { patientRepository.deleteById(1) }
+                }
+            }
+            `when`("/patient/1 doesn't exist") {
+                coEvery { patientRepository.existsById(1) } returns false
+                then("We get 404") {
+                    webTestClient.delete().uri("/patients/1")
+                        .exchange()
+                        .expectStatus().isNotFound
+                    coVerify(exactly = 1) { patientRepository.existsById(1) }
+                    coVerify(inverse = true) { patientRepository.deleteById(any()) }
+                }
+            }
+            `when`("/patient/Jan - invalid request") {
+                then("BadRequest") {
+                    webTestClient.delete().uri("/patients/Jan")
+                        .exchange()
+                        .expectStatus().isBadRequest
+                    verify { patientRepository wasNot called }
+                }
+            }
+        }
     }
 }
