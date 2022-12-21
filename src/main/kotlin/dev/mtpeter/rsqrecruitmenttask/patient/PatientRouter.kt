@@ -16,6 +16,7 @@ class PatientRouter {
         GET("/patients/{id}", patientHandler::getPatientById)
         POST("/patients", patientHandler::saveNewPatient)
         PUT("/patients/{id}", patientHandler::updatePatient)
+        DELETE("/patients/{id}", patientHandler::deletePatient)
     }
 }
 
@@ -53,5 +54,15 @@ class PatientHandler(
 
         val saved = patientRepository.save(patientDTO.toPatient(id))
         return ServerResponse.ok().bodyValueAndAwait(saved)
+    }
+
+    suspend fun deletePatient(request: ServerRequest): ServerResponse {
+        val id = request.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+
+        val exists = patientRepository.existsById(id)
+        if(!exists) return ServerResponse.notFound().buildAndAwait()
+
+        patientRepository.deleteById(id)
+        return ServerResponse.ok().buildAndAwait()
     }
 }
