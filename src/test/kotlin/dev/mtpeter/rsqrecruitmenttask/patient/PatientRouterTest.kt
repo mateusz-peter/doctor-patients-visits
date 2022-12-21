@@ -1,8 +1,6 @@
 package dev.mtpeter.rsqrecruitmenttask.patient
 
-import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.extensions.spring.SpringExtension
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -15,43 +13,46 @@ class PatientRouterTest() : BehaviorSpec() {
     private val webTestClient = WebTestClient
         .bindToRouterFunction(patientRouter.router(patientHandler)).build()
 
-    override fun extensions() = listOf(SpringExtension)
-    override fun isolationMode() = IsolationMode.InstancePerTest
-
     init {
 
-        given("Patient at id=1 and no patient at id=2") {
+        given("GET Request on /patients/{id}; Patient at id=1 and no patient at id=2") {
 
             val examplePatient = Patient(1, "Jan", "Kowalski", "Poznań")
             coEvery { patientRepository.findById(1) } returns examplePatient
             coEvery { patientRepository.findById(2) } returns null
 
-            `when`("GET Request on /patient/1") {
-                then("Request is successful and we get the patient") {
+            `when`("GET Request on /patients/1") {
+                then("Request is successful and we get the patient; Had searched in DB") {
                     webTestClient.get().uri { it.path("/patients/{id}").build(1) }
                         .exchange()
                         .expectStatus().isOk
                         .expectBody(Patient::class.java)
                         .isEqualTo(examplePatient)
+
+                    coVerify(exactly = 1) { patientRepository.findById(1) }
                 }
             }
 
-            `when`("GET Request on /patient/2") {
-                then("Request is replied with NotFound") {
+            `when`("GET Request on /patients/2") {
+                then("Request is replied with NotFound; Had searched in DB") {
                     webTestClient.get().uri("/patients/2").exchange()
                         .expectStatus().isNotFound
+
+                    coVerify(exactly = 1) { patientRepository.findById(2) }
                 }
             }
 
-            `when`("GET Request on /patient/Jan") {
-                then("Bad Request") {
+            `when`("GET Request on /patients/Jan") {
+                then("Bad Request; Hadn't searched in DB") {
                     webTestClient.get().uri("/patients/Jan").exchange()
                         .expectStatus().isBadRequest
+
+                    verify { patientRepository wasNot called }
                 }
             }
         }
 
-        given("Patients at id=1 and id=2") {
+        given("GET Request on /patients; 2 Patients at id=1 and id=2") {
             val examplePatient1 = Patient(1, "Jan", "Kowalski", "Poznań")
             val examplePatient2 = Patient(2, "Jan", "Nowak", "Poznań")
             every { patientRepository.findAll() } returns flowOf(examplePatient1, examplePatient2)
@@ -72,8 +73,7 @@ class PatientRouterTest() : BehaviorSpec() {
                 val postBody = PatientDTO("Jan", "Nowak-Jeziorański", "Radio Wolna Europa")
                 coEvery { patientRepository.save(postBody.toPatient()) } returns postBody.toPatient(1)
 
-                then("We get Created with proper Location Header and saved object with its id") {
-
+                then("Created with proper Location Header and saved object with its id") {
                     webTestClient.post().uri("/patients").bodyValue(postBody)
                         .exchange()
                         .expectStatus().isCreated
@@ -85,7 +85,7 @@ class PatientRouterTest() : BehaviorSpec() {
                 }
             }
 
-            `when`("a garbage in body") {
+            `when`("an invalid body") {
                 val postBody = mapOf("firstName" to "Jan", "lastName" to "Kowalski")
 
                 then("We get BadRequest and no object is saved") {
