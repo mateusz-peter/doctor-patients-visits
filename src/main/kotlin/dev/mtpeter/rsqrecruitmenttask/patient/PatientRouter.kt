@@ -15,6 +15,7 @@ class PatientRouter {
         GET("/patients", patientHandler::getAllPatients)
         GET("/patients/{id}", patientHandler::getPatientById)
         POST("/patients", patientHandler::saveNewPatient)
+        PUT("/patients/{id}", patientHandler::updatePatient)
     }
 }
 
@@ -41,5 +42,16 @@ class PatientHandler(
 
         return ServerResponse.created(request.uriBuilder().path("/${saved.id}").build())
             .bodyValueAndAwait(saved)
+    }
+
+    suspend fun updatePatient(request: ServerRequest): ServerResponse {
+        val id = request.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+        val patientDTO = request.awaitBody<PatientDTO>()
+
+        val exists = patientRepository.existsById(1)
+        if(!exists) return ServerResponse.notFound().buildAndAwait()
+
+        val saved = patientRepository.save(patientDTO.toPatient(id))
+        return ServerResponse.ok().bodyValueAndAwait(saved)
     }
 }

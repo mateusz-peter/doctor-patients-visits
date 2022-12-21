@@ -100,12 +100,12 @@ class PatientRouterTest() : BehaviorSpec() {
 
         given("PUT Request on /patients/{id}") {
 
-            val aPatient = Patient(1, "Jan", "Kowalski", "Warszawa")
             val putPatientDTO = PatientDTO("Jan", "Kowalski", "Poznań")
             val invalidBody = mapOf("firstName" to "Jan", "lastName" to "Kowalski")
 
             `when`("/patient/1 exists; a Patient in body") {
-                coEvery { patientRepository.findById(1) } returns aPatient
+                coEvery { patientRepository.existsById(1) } returns true
+                coEvery { patientRepository.save(putPatientDTO.toPatient(1)) } returns putPatientDTO.toPatient(1)
 
                 then("Patient 1 is updated and returned in response") {
                     webTestClient.put().uri("/patients/1").bodyValue(putPatientDTO)
@@ -113,12 +113,12 @@ class PatientRouterTest() : BehaviorSpec() {
                         .expectStatus().isOk
                         .expectBody<Patient>().isEqualTo(putPatientDTO.toPatient(1))
 
-                    coVerify(exactly = 1) { patientRepository.findById(1) }
+                    coVerify(exactly = 1) { patientRepository.existsById(1) }
                     coVerify(exactly = 1) { patientRepository.save(putPatientDTO.toPatient(1)) }
                 }
             }
             `when`("patient/1 exists; Invalid body") {
-                coEvery { patientRepository.findById(1) } returns aPatient
+                coEvery { patientRepository.existsById(1) } returns true
 
                 then("Bad Request; DB untouched") {
                     webTestClient.put().uri("/patients/1").bodyValue(invalidBody)
@@ -131,14 +131,14 @@ class PatientRouterTest() : BehaviorSpec() {
 
             //Creating with PUT in our case would be either not idempotent or force us to use IDs provided by user
             `when`("/patient/1 doesn't exist; a Patient in body") {
-                coEvery { patientRepository.findById(1) } returns null
+                coEvery { patientRepository.existsById(1) } returns false
 
                 then("Patient 1 IS NOT created; 404; DB was searched") {
                     webTestClient.put().uri("/patients/1").bodyValue(putPatientDTO)
                         .exchange()
                         .expectStatus().isNotFound
 
-                    coVerify(exactly = 1) { patientRepository.findById(1) }
+                    coVerify(exactly = 1) { patientRepository.existsById(1) }
                 }
             }
 
