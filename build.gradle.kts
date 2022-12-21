@@ -24,8 +24,9 @@ repositories {
 extra["testcontainersVersion"] = "1.17.6"
 extra["kotestVersion"] = "5.5.4"
 extra["springmockkVersion"] = "4.0.0"
- extra["kotest-extension-testcontainersVersion"] = "1.3.4"
+extra["kotest-extension-testcontainersVersion"] = "1.3.4"
 extra["kotest-extension-springVersion"] = "1.1.2"
+extra["kotest-property-arbsVersion"] = "2.1.2"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
@@ -47,8 +48,10 @@ dependencies {
 	testImplementation("org.testcontainers:r2dbc")
 	testImplementation("io.kotest:kotest-runner-junit5")
 	testImplementation("io.kotest:kotest-assertions-core")
+	testImplementation("io.kotest:kotest-property")
 	testImplementation("io.kotest.extensions:kotest-extensions-spring:${property("kotest-extension-springVersion")}")
 	testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:${property("kotest-extension-testcontainersVersion")}")
+	testImplementation("io.kotest.extensions:kotest-property-arbs:${property("kotest-property-arbsVersion")}")
 	testImplementation("com.ninja-squad:springmockk:${property("springmockkVersion")}")
 }
 
