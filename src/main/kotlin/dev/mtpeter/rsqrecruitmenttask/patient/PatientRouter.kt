@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 
@@ -34,7 +35,8 @@ class PatientHandler(
     suspend fun getAllPatientsPaged(request: ServerRequest): ServerResponse = coroutineScope {
         val pageNo = request.queryParamOrNull("page")?.toIntOrNull() ?: 0
         val pageSize = request.queryParamOrNull("size")?.toIntOrNull() ?: 10
-        val pageRequest = PageRequest.of(pageNo, pageSize)
+        val sort = Sort.by("lastName").and(Sort.by("firstName"))
+        val pageRequest = PageRequest.of(pageNo, pageSize, sort)
 
         val patients = async { patientRepository.findAllBy(pageRequest).toList() }
         val total = async { patientRepository.count() }

@@ -14,6 +14,7 @@ import io.mockk.*
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 
@@ -39,13 +40,19 @@ class PatientRouterTest() : BehaviorSpec() {
                 val patients = patientArb.take(11)
                     .mapIndexed { index, patient -> patient.copy(id = index.toLong()) }
                     .toList()
+                val patientsSortedByLastName = patients
+                    .sortedWith(comparator = compareBy<Patient> {it.lastName}
+                        .then(comparator = compareBy { it.firstName }))
+                val sort = Sort.by("lastName").and(Sort.by("firstName"))
+
                 coEvery { patientRepository.count() } returns patients.size.toLong()
                 coEvery { patientRepository.findAllBy(any()) } answers {
                     val pr = firstArg<PageRequest>()
-                    patients.drop(pr.pageNumber*pr.pageSize).take(pr.pageSize).asFlow()
+                    patientsSortedByLastName.drop(pr.pageNumber*pr.pageSize).take(pr.pageSize).asFlow()
                 }
 
                 `when`("Default page number and size") {
+
                     then("First 10 elements; 2 total pages") {
                         val page = webTestClient.get().uri("/patients/paged")
                             .exchange()
@@ -54,10 +61,10 @@ class PatientRouterTest() : BehaviorSpec() {
                             .returnResult().responseBody!!
                         page.number.shouldBe(0)
                         page.totalPages.shouldBe(2)
-                        page.content.shouldContainInOrder(patients.take(10))
+                        page.content.shouldContainInOrder(patientsSortedByLastName.take(10))
 
                         coVerify(exactly = 1) { patientRepository.count() }
-                        coVerify(exactly = 1) { patientRepository.findAllBy(PageRequest.of(0, 10))}
+                        coVerify(exactly = 1) { patientRepository.findAllBy(PageRequest.of(0, 10, sort))}
                     }
                 }
                 `when`("2nd page of size 5") {
@@ -69,10 +76,10 @@ class PatientRouterTest() : BehaviorSpec() {
                             .returnResult().responseBody!!
                         page.number.shouldBe(1)
                         page.totalPages.shouldBe(3)
-                        page.content.shouldContainInOrder(patients.drop(5).take(5))
+                        page.content.shouldContainInOrder(patientsSortedByLastName.drop(5).take(5))
 
                         coVerify(exactly = 1) { patientRepository.count() }
-                        coVerify(exactly = 1) { patientRepository.findAllBy(PageRequest.of(1, 5))}
+                        coVerify(exactly = 1) { patientRepository.findAllBy(PageRequest.of(1, 5, sort)) }
                     }
                 }
             }
