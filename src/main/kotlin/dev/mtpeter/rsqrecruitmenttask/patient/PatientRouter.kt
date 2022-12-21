@@ -1,7 +1,12 @@
 package dev.mtpeter.rsqrecruitmenttask.patient
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 
@@ -13,6 +18,7 @@ class PatientRouter {
         patientHandler: PatientHandler
     ) = coRouter {
         GET("/patients", patientHandler::getAllPatients)
+        GET("/patients/paged", patientHandler::getAllPatientsPaged)
         GET("/patients/{id}", patientHandler::getPatientById)
         POST("/patients", patientHandler::saveNewPatient)
         PUT("/patients/{id}", patientHandler::updatePatient)
@@ -24,6 +30,18 @@ class PatientRouter {
 class PatientHandler(
     private val patientRepository: PatientRepository
 ) {
+
+    suspend fun getAllPatientsPaged(request: ServerRequest): ServerResponse = coroutineScope {
+        val pageNo = request.queryParamOrNull("page")?.toIntOrNull() ?: 0
+        val pageSize = request.queryParamOrNull("size")?.toIntOrNull() ?: 10
+        val pageRequest = PageRequest.of(pageNo, pageSize)
+
+        val patients = async { patientRepository.findAllBy(pageRequest).toList() }
+        val total = async { patientRepository.count() }
+
+        val page = PageImpl(patients.await(), pageRequest, total.await())
+        ServerResponse.ok().bodyValueAndAwait(page)
+    }
 
     suspend fun getAllPatients(request: ServerRequest): ServerResponse {
         val patientFlow = patientRepository.findAll()
