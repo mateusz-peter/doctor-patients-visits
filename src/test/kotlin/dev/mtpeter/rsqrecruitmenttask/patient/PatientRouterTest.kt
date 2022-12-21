@@ -1,8 +1,17 @@
 package dev.mtpeter.rsqrecruitmenttask.patient
 
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.take
+import io.kotest.property.arbs.firstName
+import io.kotest.property.arbs.geo.country
+import io.kotest.property.arbs.lastName
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
+import org.springframework.data.domain.Page
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 
@@ -14,7 +23,48 @@ class PatientRouterTest() : BehaviorSpec() {
     private val webTestClient = WebTestClient
         .bindToRouterFunction(patientRouter.router(patientHandler)).build()
 
+    val patientArb = arbitrary {
+        val firstName = Arb.firstName().bind().toString()
+        val lastName = Arb.lastName().bind().toString()
+        val address = Arb.country().bind().toString()
+        Patient(null, firstName, lastName, address)
+    }
+
     init {
+
+        given("GET Request on /patients/paged") {
+            and("11 random patients") {
+                val patients = patientArb.take(11)
+                    .mapIndexed { index, patient -> patient.copy(id = index.toLong()) }
+                    .toList()
+
+                `when`("Default page number and size") {
+                    then("First 10 elements; 2 total pages") {
+                        val page = webTestClient.get().uri("/patients/paged")
+                            .exchange()
+                            .expectStatus().isOk
+                            .expectBody<Page<Patient>>()
+                            .returnResult().responseBody!!
+                        page.number.shouldBe(0)
+                        page.totalPages.shouldBe(2)
+                        page.content.shouldContainInOrder(patients.take(10))
+                    }
+                }
+                `when`("2nd page of size 5") {
+                    then("Elements 5..9") {
+                        val page = webTestClient.get().uri("/patients/paged")
+                            .exchange()
+                            .expectStatus().isOk
+                            .expectBody<Page<Patient>>()
+                            .returnResult().responseBody!!
+                        page.number.shouldBe(1)
+                        page.totalPages.shouldBe(3)
+                        page.content.shouldContainInOrder(patients.drop(5).take(5))
+                    }
+                }
+            }
+
+        }
 
         given("GET Request on /patients/{id}; Patient at id=1 and no patient at id=2") {
 
