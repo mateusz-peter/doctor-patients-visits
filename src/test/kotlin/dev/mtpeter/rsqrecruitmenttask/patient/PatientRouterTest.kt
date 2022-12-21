@@ -139,7 +139,6 @@ class PatientRouterTest() : BehaviorSpec() {
         }
 
         given("POST Request on /patients") {
-
             `when`("a new Patient in body") {
                 val postBody = PatientDTO("Jan", "Nowak-Jeziorański", "Radio Wolna Europa")
                 coEvery { patientRepository.save(postBody.toPatient()) } returns postBody.toPatient(1)
@@ -169,7 +168,6 @@ class PatientRouterTest() : BehaviorSpec() {
         }
 
         given("PUT Request on /patients/{id}") {
-
             val putPatientDTO = PatientDTO("Jan", "Kowalski", "Poznań")
             val invalidBody = mapOf("firstName" to "Jan", "lastName" to "Kowalski")
 
@@ -187,7 +185,6 @@ class PatientRouterTest() : BehaviorSpec() {
                     coVerify(exactly = 1) { patientRepository.save(putPatientDTO.toPatient(1)) }
                 }
             }
-
             `when`("patient/1 exists; Invalid body") {
                 coEvery { patientRepository.existsById(1) } returns true
 
@@ -199,7 +196,6 @@ class PatientRouterTest() : BehaviorSpec() {
                     verify { patientRepository wasNot called }
                 }
             }
-
             //Creating with PUT in our case would be either not idempotent or force us to use IDs provided by user
             `when`("/patient/1 doesn't exist; a Patient in body") {
                 coEvery { patientRepository.existsById(1) } returns false
@@ -212,7 +208,6 @@ class PatientRouterTest() : BehaviorSpec() {
                     coVerify(exactly = 1) { patientRepository.existsById(1) }
                 }
             }
-
             `when`("/patients/Jan; a Patient in body") {
                 then("Bad Request; DB untouched") {
                     webTestClient.put().uri("/patients/Jan").bodyValue(putPatientDTO)
