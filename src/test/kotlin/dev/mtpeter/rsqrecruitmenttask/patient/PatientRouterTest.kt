@@ -28,7 +28,7 @@ class PatientRouterTest() : BehaviorSpec() {
     private val patientRouter = PatientRouter()
     private val tenantAwareRouting: TenantAwareRouting = mockk()
     private val webTestClient = WebTestClient
-        .bindToRouterFunction(patientRouter.router(patientHandler, tenantAwareRouting)).build()
+        .bindToRouterFunction(patientRouter.routePatients(patientHandler, tenantAwareRouting)).build()
 
     val patientArb = arbitrary {
         val firstName = Arb.firstName().bind().toString()

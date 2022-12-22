@@ -16,7 +16,7 @@ import org.springframework.web.reactive.function.server.*
 class PatientRouter {
 
     @Bean
-    fun router(
+    fun routePatients(
         patientHandler: PatientHandler,
         tenantAwareRouting: TenantAwareRouting
     ) = coRouter {
