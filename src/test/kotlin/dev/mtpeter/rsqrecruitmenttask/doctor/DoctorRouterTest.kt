@@ -127,6 +127,39 @@ class DoctorRouterTest : BehaviorSpec() {
                 }
             }
         }
+        given("POST Request on /doctors") {
+            val validBody = doctorArb.single().toDTO()
 
+            `when`("Valid body") {
+                val savedId = Arb.long(10L..20L).single()
+                coEvery { doctorRepository.save(validBody.toDoctor()) } returns validBody.toDoctor(savedId)
+
+                then("Created and return saved doctor") {
+                    webTestClient.post().uri("/doctors").bodyValue(validBody).exchange()
+                        .expectStatus().isCreated
+                        .expectHeader().location("/doctors/$savedId")
+                        .expectBody<Doctor>().isEqualTo(validBody.toDoctor(savedId))
+
+                    coVerify(exactly = 1) { doctorRepository.save(validBody.toDoctor()) }
+                }
+            }
+            `when`("Invalid body") {
+                val invalidBody = mapOf("firstName" to validBody.firstName, "lastName" to validBody.lastName)
+                then("BadRequest and DB untouched") {
+                    webTestClient.post().uri("/doctors").bodyValue(invalidBody).exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { doctorRepository wasNot called }
+                }
+            }
+            `when`("No body") {
+                then("BadRequest and DB untouched") {
+                    webTestClient.post().uri("/doctors").exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { doctorRepository wasNot called }
+                }
+            }
+        }
     }
 }

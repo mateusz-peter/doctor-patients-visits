@@ -11,3 +11,11 @@ data class Doctor(
     val specialty: String
 )
 
+data class DoctorDTO(
+    val firstName: String,
+    val lastName: String,
+    val specialty: String
+) {
+    fun toDoctor(id: Long? = null) = Doctor(id, firstName, lastName, specialty)
+}
+fun Doctor.toDTO() = DoctorDTO(firstName, lastName, specialty)
