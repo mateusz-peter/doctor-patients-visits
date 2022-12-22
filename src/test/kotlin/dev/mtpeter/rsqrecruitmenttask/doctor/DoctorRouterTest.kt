@@ -161,5 +161,54 @@ class DoctorRouterTest : BehaviorSpec() {
                 }
             }
         }
+        given("PUT Request on /doctors") {
+            val validBody = doctorArb.single().toDTO()
+            `when`("Valid Id") {
+                val validId = Arb.long(10L..20L).single()
+                and("Valid Body") {
+                    and("Doctor exists") {
+                        coEvery { doctorRepository.existsById(validId) } returns true
+                        coEvery { doctorRepository.save(validBody.toDoctor()) } returns validBody.toDoctor(validId)
+                        then("Return updated entity with Ok") {
+                            webTestClient.put().uri("/doctors/$validId").bodyValue(validBody).exchange()
+                                .expectStatus().isOk
+                                .expectBody<Doctor>().isEqualTo(validBody.toDoctor(validId))
+
+                            coVerify(exactly = 1) { doctorRepository.existsById(validId) }
+                            coVerify(exactly = 1) { doctorRepository.save(validBody.toDoctor()) }
+                        }
+                    }
+                    //As with patient, creating with PUT would not be idempotent or make us use ids provided by client
+                    and("Doctor doesn't exist") {
+                        coEvery { doctorRepository.existsById(validId) } returns false
+                        then("Return NotFound") {
+                            webTestClient.put().uri("/doctors/$validId").bodyValue(validBody).exchange()
+                                .expectStatus().isNotFound
+
+                            coVerify(exactly = 1) { doctorRepository.existsById(validId) }
+                            coVerify(inverse = true) { doctorRepository.save(any()) }
+                        }
+                    }
+                }
+                and("Invalid Body") {
+                    val invalidBody = mapOf("firstName" to validBody.firstName, "lastName" to validBody.lastName)
+                    then("Bad Request, DB untouched") {
+                        webTestClient.put().uri("/doctors/$validId").bodyValue(invalidBody).exchange()
+                            .expectStatus().isBadRequest
+
+                        verify { doctorRepository wasNot called }
+                    }
+                }
+            }
+            `when`("Invalid Id and valid body") {
+                val invalidId = Arb.continent().single().toString()
+                then("Bad Request, DB untouched") {
+                    webTestClient.put().uri("/doctors/$invalidId").bodyValue(validBody).exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { doctorRepository wasNot called }
+                }
+            }
+        }
     }
 }
