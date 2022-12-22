@@ -8,7 +8,7 @@ import io.kotest.extensions.spring.SpringExtension
 class KotestConfig : AbstractProjectConfig() {
 
     override val isolationMode: IsolationMode
-        get() = IsolationMode.InstancePerTest
+        get() = IsolationMode.InstancePerLeaf
 
     override fun extensions(): List<Extension> = listOf(SpringExtension)
 }
