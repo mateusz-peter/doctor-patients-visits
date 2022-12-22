@@ -24,6 +24,7 @@ class DoctorRouter {
         GET("/doctors/paged", doctorHandler::getPagedDoctors)
         GET("/doctors/{id}", doctorHandler::getDoctorById)
         POST("/doctors", doctorHandler::createDoctor)
+        PUT("/doctors/{id}", doctorHandler::updateDoctor)
     }
 }
 
@@ -57,6 +58,14 @@ class DoctorHandler(
         val location = serverRequest.uriBuilder().path("/${saved.id}").build()
         return ServerResponse.created(location).bodyValueAndAwait(saved)
     }
+
+    suspend fun updateDoctor(serverRequest: ServerRequest): ServerResponse {
+        val body = serverRequest.awaitBodyOrNull<DoctorDTO>() ?: return ServerResponse.badRequest().buildAndAwait()
+        val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+
+        val saved = doctorService.updateDoctor(id, body) ?: return ServerResponse.notFound().buildAndAwait()
+        return ServerResponse.ok().bodyValueAndAwait(saved)
+    }
 }
 
 @Component
@@ -76,4 +85,11 @@ class DoctorService(
     suspend fun getDoctorById(id: Long): Doctor? = doctorRepository.findById(id)
 
     suspend fun createDoctor(doctorDTO: DoctorDTO): Doctor = doctorRepository.save(doctorDTO.toDoctor())
+
+    suspend fun updateDoctor(id: Long, doctorDTO: DoctorDTO): Doctor? {
+        val exists = doctorRepository.existsById(id)
+        if(!exists) return null
+
+        return doctorRepository.save(doctorDTO.toDoctor())
+    }
 }
