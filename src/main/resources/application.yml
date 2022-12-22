@@ -1,5 +1,15 @@
+#spring:
+#  r2dbc:
+#    username: test
+#    password: test
+#    url: r2dbc:postgresql://localhost/postgres
+dev.mtpeter.rsq:
+  tenants:
+    tenantA:
+      username: test
+      password: test
+      url: r2dbc:postgresql://localhost/postgres
 spring:
-  r2dbc:
-    username: test
-    password: test
-    url: r2dbc:postgresql://localhost/postgres
+  sql:
+    init:
+      mode: never
