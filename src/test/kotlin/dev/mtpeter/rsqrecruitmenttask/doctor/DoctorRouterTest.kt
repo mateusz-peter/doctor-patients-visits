@@ -161,7 +161,7 @@ class DoctorRouterTest : BehaviorSpec() {
                 }
             }
         }
-        given("PUT Request on /doctors") {
+        given("PUT Request on /doctors/{id}") {
             val validBody = doctorArb.single().toDTO()
             `when`("Valid Id") {
                 val validId = Arb.long(10L..20L).single()
@@ -204,6 +204,44 @@ class DoctorRouterTest : BehaviorSpec() {
                 val invalidId = Arb.continent().single().toString()
                 then("Bad Request, DB untouched") {
                     webTestClient.put().uri("/doctors/$invalidId").bodyValue(validBody).exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { doctorRepository wasNot called }
+                }
+            }
+        }
+        given("DELETE Request on /doctors/{id}") {
+            //In case of doctors, let's return their state before deletion
+            `when`("Valid id") {
+                val validId = Arb.long(10L..20L).single()
+                and("Found") {
+                    val docToDelete = doctorArb.single().copy(id = validId)
+                    coEvery { doctorRepository.findById(validId) } returns docToDelete
+                    coEvery { doctorRepository.deleteById(validId) } just runs
+                    then("Returns deleted doctor and deletes them from DB") {
+                        webTestClient.delete().uri("/doctors/$validId").exchange()
+                            .expectStatus().isOk
+                            .expectBody<Doctor>().isEqualTo(docToDelete)
+
+                        coVerify(exactly = 1) { doctorRepository.findById(validId) }
+                        coVerify(exactly = 1) { doctorRepository.deleteById(validId) }
+                    }
+                }
+                and("Not Found") {
+                    coEvery { doctorRepository.findById(validId) } returns null
+                    then("NotFound; no object deleted") {
+                        webTestClient.delete().uri("/doctors/$validId").exchange()
+                            .expectStatus().isNotFound
+
+                        coVerify(exactly = 1) { doctorRepository.findById(validId) }
+                        coVerify(inverse = true) { doctorRepository.deleteById(any()) }
+                    }
+                }
+            }
+            `when`("Invalid id") {
+                val invalidId = Arb.color().single().value
+                then("BadRequest; DB untouched") {
+                    webTestClient.delete().uri("/doctors/$invalidId").exchange()
                         .expectStatus().isBadRequest
 
                     verify { doctorRepository wasNot called }
