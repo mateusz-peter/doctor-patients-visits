@@ -25,6 +25,7 @@ class DoctorRouter {
         GET("/doctors/{id}", doctorHandler::getDoctorById)
         POST("/doctors", doctorHandler::createDoctor)
         PUT("/doctors/{id}", doctorHandler::updateDoctor)
+        DELETE("/doctors/{id}", doctorHandler::deleteDoctor)
     }
 }
 
@@ -66,6 +67,12 @@ class DoctorHandler(
         val saved = doctorService.updateDoctor(id, body) ?: return ServerResponse.notFound().buildAndAwait()
         return ServerResponse.ok().bodyValueAndAwait(saved)
     }
+
+    suspend fun deleteDoctor(serverRequest: ServerRequest): ServerResponse {
+        val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+        val doctor = doctorService.deleteDoctor(id) ?: return ServerResponse.notFound().buildAndAwait()
+        return ServerResponse.ok().bodyValueAndAwait(doctor)
+    }
 }
 
 @Component
@@ -91,5 +98,11 @@ class DoctorService(
         if(!exists) return null
 
         return doctorRepository.save(doctorDTO.toDoctor())
+    }
+
+    suspend fun deleteDoctor(id: Long): Doctor? {
+        val docToDelete = doctorRepository.findById(id) ?: return null
+        doctorRepository.deleteById(id)
+        return docToDelete
     }
 }
