@@ -25,13 +25,15 @@ import org.springframework.test.web.reactive.server.expectBodyList
 class DoctorRouterTest : BehaviorSpec() {
 
     val doctorRepository: DoctorRepository = mockk()
+    val doctorService = DoctorService(doctorRepository)
+    val doctorHandler = DoctorHandler(doctorService)
     val doctorRouter = DoctorRouter()
-    val webTestClient= WebTestClient.bindToRouterFunction(doctorRouter.routeDoctors(doctorRepository)).build()
+    val webTestClient= WebTestClient.bindToRouterFunction(doctorRouter.routeDoctors(doctorHandler)).build()
 
     val doctorArb = arbitrary {
-        val firstName = Arb.firstName().bind().toString()
-        val lastName = Arb.lastName().bind().toString()
-        val specialty = Arb.color().bind().toString()
+        val firstName = Arb.firstName().bind().name
+        val lastName = Arb.lastName().bind().name
+        val specialty = Arb.color().bind().value
         Doctor(null, firstName, lastName, specialty)
     }
 
@@ -91,18 +93,21 @@ class DoctorRouterTest : BehaviorSpec() {
             and("11 random doctors") {
                 val doctors = doctorArb.take(11).mapIndexed { i, d -> d.copy(id = i.toLong()) }.toList()
                 val expectedSort = Sort.by("lastName").and(Sort.by("firstName"))
+                coEvery { doctorRepository.count() } returns doctors.size.toLong()
+
                 `when`("Default request") {
                     coEvery { doctorRepository.findAllBy(PageRequest.of(0, 10, expectedSort)) } returns doctors.take(10).asFlow()
                     then("page 0, 10 doctors, total 2 pages") {
                         val page = webTestClient.get().uri("/doctors/paged").exchange()
                             .expectStatus().isOk
-                            .expectBody(RestResponsePage::class.java)
+                            .expectBody<RestResponsePage<Doctor>>()
                             .returnResult().responseBody!!
                         page.number.shouldBe(0)
                         page.content.shouldContainInOrder(doctors.take(10))
                         page.totalPages.shouldBe(2)
 
                         coVerify(exactly = 1) { doctorRepository.findAllBy(PageRequest.of(0, 10, expectedSort)) }
+                        coVerify(exactly = 1) { doctorRepository.count() }
                     }
                 }
                 `when`("Second page of size 5") {
@@ -110,16 +115,18 @@ class DoctorRouterTest : BehaviorSpec() {
                     then("page 1, doctors 5..9, total 3 pages") {
                         val page = webTestClient.get().uri("/doctors/paged?page=1&size=5").exchange()
                             .expectStatus().isOk
-                            .expectBody(RestResponsePage::class.java)
+                            .expectBody<RestResponsePage<Doctor>>()
                             .returnResult().responseBody!!
                         page.number.shouldBe(1)
                         page.content.shouldContainInOrder(doctors.drop(5).take(5))
                         page.totalPages.shouldBe(3)
 
                         coVerify(exactly = 1) { doctorRepository.findAllBy(PageRequest.of(1, 5, expectedSort)) }
+                        coVerify(exactly = 1) { doctorRepository.count() }
                     }
                 }
             }
         }
+
     }
 }

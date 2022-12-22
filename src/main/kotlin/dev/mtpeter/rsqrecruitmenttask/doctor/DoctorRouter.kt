@@ -1,20 +1,69 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.toList
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.web.reactive.function.server.buildAndAwait
-import org.springframework.web.reactive.function.server.coRouter
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.server.*
 
 @Configuration
 class DoctorRouter {
 
     @Bean
     fun routeDoctors(
-        doctorRepository: DoctorRepository
+        doctorHandler: DoctorHandler
     ) = coRouter {
-        GET("/doctors") {
-            ok().buildAndAwait()
-        }
+        GET("/doctors", doctorHandler::getAllDoctors)
+        GET("/doctors/paged", doctorHandler::getPagedDoctors)
+        GET("/doctors/{id}", doctorHandler::getDoctorById)
     }
 }
 
+@Component
+class DoctorHandler(
+    private val doctorService: DoctorService
+) {
+
+    suspend fun getAllDoctors(serverRequest: ServerRequest): ServerResponse {
+        return ServerResponse.ok().bodyAndAwait(doctorService.getAllDoctors())
+    }
+
+    suspend fun getPagedDoctors(serverRequest: ServerRequest): ServerResponse {
+        val pageNo = serverRequest.queryParamOrNull("page")?.toIntOrNull() ?: 0
+        val pageSize = serverRequest.queryParamOrNull("size")?.toIntOrNull() ?: 10
+        val sort = Sort.by("lastName", "firstName")
+
+        return ServerResponse.ok().bodyValueAndAwait(doctorService.getPagedDoctors(pageNo, pageSize, sort))
+    }
+
+    suspend fun getDoctorById(serverRequest: ServerRequest): ServerResponse {
+        val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+
+        val doctor = doctorService.getDoctorById(id) ?: return ServerResponse.notFound().buildAndAwait()
+        return ServerResponse.ok().bodyValueAndAwait(doctor)
+    }
+}
+
+@Component
+class DoctorService(
+    private val doctorRepository: DoctorRepository
+) {
+    fun getAllDoctors(): Flow<Doctor> = doctorRepository.findAll()
+
+    suspend fun getPagedDoctors(pageNo: Int, pageSize: Int, sort: Sort): Page<Doctor> = coroutineScope {
+        val pageRequest = PageRequest.of(pageNo, pageSize, sort)
+        val pageContent = async { doctorRepository.findAllBy(pageRequest).toList() }
+        val total = async { doctorRepository.count() }
+
+        PageImpl(pageContent.await(), pageRequest, total.await())
+    }
+
+    suspend fun getDoctorById(id: Long): Doctor? = doctorRepository.findById(id)
+}
