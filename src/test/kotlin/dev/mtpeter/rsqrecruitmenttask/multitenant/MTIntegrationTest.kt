@@ -26,7 +26,7 @@ class MTIntegrationTest @Autowired constructor(
         val postgres = PostgreSQLContainer<Nothing>("postgres:15.1-alpine").apply {
             startupAttempts = 1
             withCopyToContainer(
-                MountableFile.forClasspathResource("schema.sql"),
+                MountableFile.forClasspathResource("dbSchema.sql"),
                 "/docker-entrypoint-initdb.d/init.sql"
             )
             withUsername("test")
@@ -62,7 +62,7 @@ class MTIntegrationTest @Autowired constructor(
             }
             `when`("Invalid tenant is provided in X-TenantID header") {
                 then("We get BadRequest") {
-                    webTestClient.get().uri("/patients").header("X-TenantID", "tenantB")
+                    webTestClient.get().uri("/patients").header("X-TenantID", "tenantX")
                         .exchange().expectStatus().isBadRequest
                 }
             }

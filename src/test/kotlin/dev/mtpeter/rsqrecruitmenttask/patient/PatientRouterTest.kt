@@ -1,6 +1,7 @@
 package dev.mtpeter.rsqrecruitmenttask.patient
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
+import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
@@ -17,14 +18,17 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.web.reactive.function.server.ServerRequest
+import org.springframework.web.reactive.function.server.ServerResponse
 
 class PatientRouterTest() : BehaviorSpec() {
 
     private val patientRepository: PatientRepository = mockk()
     private val patientHandler = PatientHandler(patientRepository)
     private val patientRouter = PatientRouter()
+    private val tenantAwareRouting: TenantAwareRouting = mockk()
     private val webTestClient = WebTestClient
-        .bindToRouterFunction(patientRouter.router(patientHandler)).build()
+        .bindToRouterFunction(patientRouter.router(patientHandler, tenantAwareRouting)).build()
 
     val patientArb = arbitrary {
         val firstName = Arb.firstName().bind().toString()
@@ -34,6 +38,12 @@ class PatientRouterTest() : BehaviorSpec() {
     }
 
     init {
+
+        coEvery { tenantAwareRouting.tenantAwareFilter(any(), any()) } coAnswers  { call ->
+            val r = firstArg<ServerRequest>()
+            val f = secondArg<suspend (ServerRequest) -> ServerResponse>()
+            f(r)
+        }
 
         given("GET Request on /patients/paged") {
             and("11 random patients") {

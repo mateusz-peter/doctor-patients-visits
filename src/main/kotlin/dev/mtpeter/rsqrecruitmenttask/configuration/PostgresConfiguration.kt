@@ -26,7 +26,7 @@ class PostgresConfiguration(
         }
     }
 
-    private fun makeConnectionFactory() = TenantAwareConnectionFactory().apply {
+    private fun makeConnectionFactory() = TenantAwareConnectionFactory(tenants.keys).apply {
         setLenientFallback(false)
         setTargetConnectionFactories(tenantsFromConfiguration())
     }
@@ -39,14 +39,20 @@ class PostgresConfiguration(
     }
 }
 
-private class TenantAwareConnectionFactory : AbstractRoutingConnectionFactory() {
+private class TenantAwareConnectionFactory(
+    val validTenants: Set<String>
+) : AbstractRoutingConnectionFactory() {
 
     override fun getMetadata(): ConnectionFactoryMetadata = ConnectionFactoryMetadata { "PostgreSQL" }
 
     override fun determineCurrentLookupKey(): Mono<Any> {
         return Mono.deferContextual { it.toMono() }
             .filter { it.hasKey("TenantId") }
-            .map { it.get<Any>("TenantId") }
-            .switchIfEmpty(Mono.defer { RuntimeException().toMono() })
+            .map { it.get<String>("TenantId") }
+            .switchIfEmpty(Mono.defer { NoTenantException().toMono() })
+            .flatMap {
+                if (it in validTenants) it.toMono()
+                else Mono.defer { InvalidTenantException(it).toMono() }
+            }
     }
 }
