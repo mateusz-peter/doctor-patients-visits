@@ -31,7 +31,7 @@ class DoctorRouterTest : BehaviorSpec() {
     val doctorRepository: DoctorRepository = mockk()
     val visitRepository: VisitRepository = mockk()
     val tenantAwareRouting: TenantAwareRouting = TenantAwareRoutingDummy()
-    val doctorService = DoctorService(doctorRepository)
+    val doctorService = DoctorService(doctorRepository, visitRepository)
     val doctorHandler = DoctorHandler(doctorService)
     val doctorRouter = DoctorRouter()
     val webTestClient= WebTestClient.bindToRouterFunction(doctorRouter.routeDoctors(doctorHandler, tenantAwareRouting)).build()
@@ -221,7 +221,9 @@ class DoctorRouterTest : BehaviorSpec() {
             //In case of doctors, let's return their state before deletion
             `when`("Valid id") {
                 val validId = Arb.long(10L..20L).single()
+                val docToDelete = doctorArb.single().copy(id = validId)
                 and("Doctor has visits") {
+                    coEvery { doctorRepository.findById(validId) } returns docToDelete
                     coEvery { visitRepository.existsByDoctorId(validId) } returns true
                     then("Returns Conflict") {
                         webTestClient.delete().uri("/doctors/$validId").exchange()
@@ -233,7 +235,6 @@ class DoctorRouterTest : BehaviorSpec() {
                     }
                 }
                 and("Found") {
-                    val docToDelete = doctorArb.single().copy(id = validId)
                     coEvery { visitRepository.existsByDoctorId(validId) } returns false
                     coEvery { doctorRepository.findById(validId) } returns docToDelete
                     coEvery { doctorRepository.deleteById(validId) } just runs

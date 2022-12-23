@@ -1,6 +1,7 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
+import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 
@@ -74,14 +76,18 @@ class DoctorHandler(
 
     suspend fun deleteDoctor(serverRequest: ServerRequest): ServerResponse {
         val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
-        val doctor = doctorService.deleteDoctor(id) ?: return ServerResponse.notFound().buildAndAwait()
-        return ServerResponse.ok().bodyValueAndAwait(doctor)
+        return when(val result = doctorService.deleteDoctor(id)) {
+            is DoctorNotFound -> ServerResponse.notFound().buildAndAwait()
+            is DoctorHasVisits -> ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
+            is DeletedDoctor -> ServerResponse.ok().bodyValueAndAwait(result.doctor)
+        }
     }
 }
 
 @Component
 class DoctorService(
-    private val doctorRepository: DoctorRepository
+    private val doctorRepository: DoctorRepository,
+    private val visitRepository: VisitRepository
 ) {
     fun getAllDoctors(): Flow<Doctor> = doctorRepository.findAll()
 
@@ -104,9 +110,16 @@ class DoctorService(
         return doctorRepository.save(doctorDTO.toDoctor())
     }
 
-    suspend fun deleteDoctor(id: Long): Doctor? {
-        val docToDelete = doctorRepository.findById(id) ?: return null
+    suspend fun deleteDoctor(id: Long): RemovalResult {
+        val docToDelete = doctorRepository.findById(id) ?: return DoctorNotFound
+        if (visitRepository.existsByDoctorId(id)) return DoctorHasVisits
+
         doctorRepository.deleteById(id)
-        return docToDelete
+        return DeletedDoctor(docToDelete)
     }
 }
+
+sealed interface RemovalResult
+object DoctorNotFound: RemovalResult
+object DoctorHasVisits: RemovalResult
+data class DeletedDoctor(val doctor: Doctor): RemovalResult
