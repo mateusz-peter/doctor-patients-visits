@@ -50,7 +50,7 @@ class VisitHandler(
     }
 
     suspend fun scheduleVisit(serverRequest: ServerRequest): ServerResponse {
-        val body = serverRequest.awaitBodyOrNull<VisitDTO>() ?: return ServerResponse.badRequest().buildAndAwait()
+        val body = serverRequest.awaitBodyOrNull<VisitDTO>()?.validated() ?: return ServerResponse.badRequest().buildAndAwait()
         val saved = visitService.scheduleVisit(body.toVisit()) ?: return ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
         val location = serverRequest.uriBuilder().path("/${saved.id}").build()
         return ServerResponse.created(location).bodyValueAndAwait(saved)
@@ -58,7 +58,7 @@ class VisitHandler(
 
     suspend fun rescheduleVisit(serverRequest: ServerRequest): ServerResponse {
         val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
-        val body = serverRequest.awaitBodyOrNull<VisitDTO>() ?: return ServerResponse.badRequest().buildAndAwait()
+        val body = serverRequest.awaitBodyOrNull<VisitDTO>()?.validated() ?: return ServerResponse.badRequest().buildAndAwait()
 
         return when(val result = visitService.rescheduleVisit(body.toVisit(id))) {
             is ExistingVisitNotFound -> ServerResponse.notFound().buildAndAwait()

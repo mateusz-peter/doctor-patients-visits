@@ -24,5 +24,7 @@ data class VisitDTO(
     val patientId: Long
 ) {
     fun toVisit(id: Long? = null) = Visit(id, visitDate, visitTime, place, doctorId, patientId)
+    fun validated(): VisitDTO? = if (visitTime.second == 0 && visitTime.nano == 0) this else null
 }
+
 fun Visit.toDTO() = VisitDTO(visitDate, visitTime, place, doctorId, patientId)

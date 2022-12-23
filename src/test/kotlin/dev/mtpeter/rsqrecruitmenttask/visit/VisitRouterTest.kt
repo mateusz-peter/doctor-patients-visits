@@ -189,6 +189,8 @@ class VisitRouterTest : BehaviorSpec() {
                     then("BadRequest; DB untouched") {
                         webTestClient.post().uri("/visits").bodyValue(invalidBody).exchange()
                             .expectStatus().isBadRequest
+
+                        verify { visitRepository wasNot called }
                     }
                 }
             }

@@ -26,7 +26,7 @@ CREATE TABLE visit(
     doctor_id bigint references doctor(id),
     patient_id bigint references patient(id),
     UNIQUE (visit_date, visit_hour, doctor_id),
-    CHECK ( date_part('minute', visit_hour) = 0 AND date_part('microseconds', visit_hour) = 0 )
+    CHECK ( date_part('microseconds', visit_hour) = 0 )
 );
 CREATE INDEX ON visit(patient_id);
 CREATE INDEX ON visit(visit_date, visit_hour);
