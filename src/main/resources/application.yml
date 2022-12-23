@@ -3,7 +3,7 @@ dev.mtpeter.rsq:
     tenantA:
       username: test
       password: test
-      url: r2dbc:postgresql://localhost/postgres
+      url: r2dbc:postgresql://localhost/tenantA
     tenantB:
       username: test
       password: test
