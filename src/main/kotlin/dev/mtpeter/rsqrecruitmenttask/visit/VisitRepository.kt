@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository
 interface VisitRepository : CoroutineCrudRepository<Visit, Long> {
     fun findBy(pageable: Pageable): Flow<Visit>
     fun findByPatientId(patientId: Long, pageable: Pageable): Flow<Visit>
+    suspend fun countByPatientId(patientId: Long): Long
 }
