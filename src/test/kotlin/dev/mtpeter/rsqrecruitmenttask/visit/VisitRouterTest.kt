@@ -184,5 +184,74 @@ class VisitRouterTest : BehaviorSpec() {
                 }
             }
         }
+        given("PUT Request on /visits/{id}") {
+            val validId = Arb.long(10L..20L).single()
+            val validBody = visitArb.single().toDTO()
+
+            `when`("Invalid Id") {
+                val invalidId = Arb.country().single().name
+                then("BadRequest; DB untouched") {
+                    webTestClient.put().uri("/visits/$invalidId").bodyValue(validBody).exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { visitRepository wasNot called }
+                }
+            }
+            `when`("Invalid Body") {
+                val invalidBody = mapOf("ashes" to "ashes", "dust" to "dust")
+                then("BadRequest; DB untouched") {
+                    webTestClient.put().uri("/visits/$validId").bodyValue(invalidBody).exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { visitRepository wasNot called }
+                }
+            }
+            `when`("Trying to change patient") {
+                val existingVisit = validBody.toVisit(id = validId)
+                    .copy(patientId = validBody.patientId+1)
+                coEvery { visitRepository.findById(validId) } returns existingVisit
+                then("BadRequest; Visit not changed") {
+                    webTestClient.put().uri("/visits/$validId").bodyValue(validBody).exchange()
+                        .expectStatus().isBadRequest
+
+                    coVerify(exactly = 1) { visitRepository.findById(validId) }
+                    coVerify(inverse = true) { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(any(), any(), any()) }
+                    coVerify(inverse = true) { visitRepository.save(any()) }
+                }
+            }
+            `when`("Valid Request") {
+                val existingVisit = validBody.toVisit(id = validId).copy(visitDate = validBody.visitDate.minusMonths(1))
+                coEvery { visitRepository.findById(validId) } returns existingVisit
+
+                and("Conflicting visit") {
+                    val conflictingVisit = visitArb.single()
+                        .copy(id = validId+1, visitDate = validBody.visitDate, visitTime = validBody.visitTime, doctorId = validBody.doctorId)
+                    coEvery { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(validBody.visitDate, validBody.visitTime, validBody.doctorId) } returns conflictingVisit
+
+                    then("Conflict; visit is unchanged") {
+                        webTestClient.put().uri("/visits/$validId").bodyValue(validBody).exchange()
+                            .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+
+                        coVerify(exactly = 1) { visitRepository.findById(validId) }
+                        coVerify(exactly = 1) { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(validBody.visitDate, validBody.visitTime, validBody.doctorId) }
+                        coVerify(inverse = true) { visitRepository.save(any()) }
+                    }
+                }
+                and("No conflicting visit") {
+                    coEvery { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(validBody.visitDate, validBody.visitTime, validBody.doctorId) } returns null
+                    coEvery { visitRepository.save(validBody.toVisit(validId)) } returns validBody.toVisit(validId)
+
+                    then("Ok; return updated visit") {
+                        webTestClient.put().uri("/visits/$validId").bodyValue(validBody).exchange()
+                            .expectStatus().isOk
+                            .expectBody<Visit>().isEqualTo(validBody.toVisit(validId))
+
+                        coVerify(exactly = 1) { visitRepository.findById(validId) }
+                        coVerify(exactly = 1) { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(validBody.visitDate, validBody.visitTime, validBody.doctorId)}
+                        coVerify(exactly = 1) { visitRepository.save(validBody.toVisit(validId))}
+                    }
+                }
+            }
+        }
     }
 }
