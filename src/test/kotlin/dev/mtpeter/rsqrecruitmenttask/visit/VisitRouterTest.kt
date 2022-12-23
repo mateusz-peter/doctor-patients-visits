@@ -1,15 +1,22 @@
- package dev.mtpeter.rsqrecruitmenttask.visit
+package dev.mtpeter.rsqrecruitmenttask.visit
 
+import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.*
 import io.kotest.property.arbs.geo.country
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
 
 class VisitRouterTest : BehaviorSpec() {
@@ -54,8 +61,77 @@ class VisitRouterTest : BehaviorSpec() {
                 }
             }
         }
+        given("GET Request on /visits/paged") {
+            val patientXId = Arb.long(1000L..2000L).single()
+            val visits = visitArb.take(30).mapIndexed { i, v ->
+                v.copy(id = i.toLong(), patientId = if (i % 2 == 0) patientXId else v.patientId)
+            }.toList()
+            val patientXVisits = visits.filter { it.patientId == patientXId }
+            val defaultPage = PageRequest.of(0, 10, Sort.by("visitDate", "visitTime").descending())
+            val customPage = PageRequest.of(1, 5, Sort.by("visitDate", "visitTime").descending())
 
+            `when`("No patientId provided") {
+                and("Default page") {
+                    every { visitRepository.findBy(defaultPage) } returns visits.take(10).asFlow()
+                    then("10 first visits") {
+                        val page = webTestClient.get().uri("/visits/paged").exchange()
+                            .expectStatus().isOk
+                            .expectBody<RestResponsePage<Visit>>()
+                            .returnResult().responseBody!!
+                        page.number.shouldBe(0)
+                        page.shouldContainInOrder(visits.take(10))
+                        page.totalPages.shouldBe(visits.size / 10)
 
+                        verify(exactly = 1) { visitRepository.findBy(defaultPage) }
+                    }
+                }
+                and("page #1 with 5 visits") {
+                    every { visitRepository.findBy(customPage) } returns visits.drop(5).take(5).asFlow()
+                    then("visits 5..9") {
+                        val page = webTestClient.get().uri("/visits/paged?page=1&size=5").exchange()
+                            .expectStatus().isOk
+                            .expectBody<RestResponsePage<Visit>>()
+                            .returnResult().responseBody!!
+                        page.number.shouldBe(1)
+                        page.shouldContainInOrder(visits.drop(5).take(5))
+                        page.totalPages.shouldBe(visits.size / 5)
 
+                        verify(exactly = 1) { visitRepository.findBy(customPage) }
+                    }
+                }
+            }
+            `when`("patientId provided") {
+                and("Default page") {
+                    every { visitRepository.findByPatientId(patientXId, defaultPage) } returns patientXVisits.take(10)
+                        .asFlow()
+                    then("10 first visits") {
+                        val page = webTestClient.get().uri("/visits/paged?id=$patientXId").exchange()
+                            .expectStatus().isOk
+                            .expectBody<RestResponsePage<Visit>>()
+                            .returnResult().responseBody!!
+                        page.number.shouldBe(0)
+                        page.content.shouldContainInOrder(patientXVisits.take(10))
+                        page.totalPages.shouldBe(patientXVisits.size / 10)
+
+                        verify(exactly = 1) { visitRepository.findByPatientId(patientXId, defaultPage) }
+                    }
+                }
+                and("Custom Page") {
+                    every { visitRepository.findByPatientId(patientXId, customPage) } returns patientXVisits.drop(5)
+                        .take(5).asFlow()
+                    then("visits 5..9") {
+                        val page = webTestClient.get().uri("/visits/paged?id=$patientXId&page=1&size=5").exchange()
+                            .expectStatus().isOk
+                            .expectBody<RestResponsePage<Visit>>()
+                            .returnResult().responseBody!!
+                        page.number.shouldBe(1)
+                        page.content.shouldContainInOrder(patientXVisits.drop(5).take(5))
+                        page.totalPages.shouldBe(patientXVisits.size / 5)
+
+                        verify(exactly = 1) { visitRepository.findByPatientId(patientXId, customPage) }
+                    }
+                }
+            }
+        }
     }
 }
