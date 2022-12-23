@@ -26,6 +26,7 @@ class VisitRouter {
         GET("/visits", visitHandler::getAllVisits)
         GET("/visits/paged", visitHandler::getVisitsPaged)
         POST("/visits", visitHandler::scheduleVisit)
+        PUT("/visits/{id}", visitHandler::rescheduleVisit)
         filter(tenantAwareRouting::tenantAwareFilter)
     }
 }
@@ -53,6 +54,18 @@ class VisitHandler(
         val saved = visitService.scheduleVisit(body.toVisit()) ?: return ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
         val location = serverRequest.uriBuilder().path("/${saved.id}").build()
         return ServerResponse.created(location).bodyValueAndAwait(saved)
+    }
+
+    suspend fun rescheduleVisit(serverRequest: ServerRequest): ServerResponse {
+        val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+        val body = serverRequest.awaitBodyOrNull<VisitDTO>() ?: return ServerResponse.badRequest().buildAndAwait()
+
+        return when(val result = visitService.rescheduleVisit(body.toVisit(id))) {
+            is ExistingVisitNotFound -> ServerResponse.notFound().buildAndAwait()
+            is TryingToChangePatient -> ServerResponse.badRequest().buildAndAwait()
+            is ConflictingVisit -> ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
+            is SavedVisit -> ServerResponse.ok().bodyValueAndAwait(result.visit)
+        }
     }
 }
 
@@ -82,4 +95,19 @@ class VisitService(
 
         return visitRepository.save(visit)
     }
+
+    suspend fun rescheduleVisit(visitToUpdate: Visit): RescheduleResult {
+        val existingVisit = visitRepository.findById(visitToUpdate.id!!) ?: return ExistingVisitNotFound
+        if(visitToUpdate.patientId != existingVisit.patientId) return TryingToChangePatient
+        val conflictingVisit = visitRepository.findByVisitDateAndVisitTimeAndDoctorId(visitToUpdate.visitDate, visitToUpdate.visitTime, visitToUpdate.doctorId)
+        if(conflictingVisit != null) return ConflictingVisit
+        val saved = visitRepository.save(visitToUpdate)
+        return SavedVisit(saved)
+    }
 }
+
+sealed interface RescheduleResult
+object ExistingVisitNotFound : RescheduleResult
+object TryingToChangePatient : RescheduleResult
+object ConflictingVisit : RescheduleResult
+data class SavedVisit(val visit: Visit) : RescheduleResult

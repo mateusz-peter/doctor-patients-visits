@@ -223,6 +223,17 @@ class VisitRouterTest : BehaviorSpec() {
                 val existingVisit = validBody.toVisit(id = validId).copy(visitDate = validBody.visitDate.minusMonths(1))
                 coEvery { visitRepository.findById(validId) } returns existingVisit
 
+                and("No existing visit") {
+                    coEvery { visitRepository.findById(validId) } returns null
+                    then("Not Found") {
+                        webTestClient.put().uri("/visits/$validId").bodyValue(validBody).exchange()
+                            .expectStatus().isNotFound
+
+                        coVerify(exactly = 1) { visitRepository.findById(validId) }
+                        coVerify(inverse = true) { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(any(), any(), any())}
+                        coVerify(inverse = true) { visitRepository.save(any()) }
+                    }
+                }
                 and("Conflicting visit") {
                     val conflictingVisit = visitArb.single()
                         .copy(id = validId+1, visitDate = validBody.visitDate, visitTime = validBody.visitTime, doctorId = validBody.doctorId)
