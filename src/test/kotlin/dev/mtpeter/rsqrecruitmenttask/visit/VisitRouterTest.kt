@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
@@ -137,6 +138,49 @@ class VisitRouterTest : BehaviorSpec() {
                         verify(exactly = 1) { visitRepository.findByPatientId(patientXId, customPage) }
                         coVerify(exactly = 1) { visitRepository.countByPatientId(patientXId) }
                     }
+                }
+            }
+        }
+        given("POST Request on /visits") {
+            `when`("Valid Body") {
+                val validBody = visitArb.single().toDTO()
+                val date = validBody.visitDate
+                val time = validBody.visitTime
+                val doctorId = validBody.doctorId
+
+                and("Conflicting visit exists") {
+                    val visitId = Arb.long(10L..20L).single()
+                    coEvery { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(date, time, doctorId) } returns validBody.toVisit(visitId)
+                    then("Conflict, nothing saved") {
+                        webTestClient.post().uri("/visits").bodyValue(validBody).exchange()
+                            .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+
+                        coVerify(exactly = 1) { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(date, time, doctorId) }
+                        coVerify(inverse = true) { visitRepository.save(any()) }
+                    }
+                }
+                and("Conflicting visit doesn't exist") {
+                    val visitId = Arb.long(100L..200L).single()
+                    coEvery { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(date, time, doctorId) } returns null
+                    coEvery { visitRepository.save(validBody.toVisit()) } returns validBody.toVisit(visitId)
+                    then("Ok and return saved visit") {
+                        webTestClient.post().uri("/visits").bodyValue(validBody).exchange()
+                            .expectStatus().isCreated
+                            .expectHeader().location("/visits/$visitId")
+                            .expectBody<Visit>().isEqualTo(validBody.toVisit(visitId))
+
+                        coVerify(exactly = 1) { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(date, time, doctorId) }
+                        coVerify(exactly = 1) { visitRepository.save(validBody.toVisit()) }
+                    }
+                }
+            }
+            `when`("Invalid Body") {
+                val invalidBody = mapOf("garbage" to "trash")
+                then("BadRequest; DB untouched") {
+                    webTestClient.post().uri("/visits").bodyValue(invalidBody).exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { visitRepository wasNot called }
                 }
             }
         }
