@@ -142,8 +142,8 @@ class VisitRouterTest : BehaviorSpec() {
             }
         }
         given("POST Request on /visits") {
+            val validBody = visitArb.single().toDTO()
             `when`("Valid Body") {
-                val validBody = visitArb.single().toDTO()
                 val date = validBody.visitDate
                 val time = validBody.visitTime
                 val doctorId = validBody.doctorId
@@ -175,12 +175,21 @@ class VisitRouterTest : BehaviorSpec() {
                 }
             }
             `when`("Invalid Body") {
-                val invalidBody = mapOf("garbage" to "trash")
-                then("BadRequest; DB untouched") {
-                    webTestClient.post().uri("/visits").bodyValue(invalidBody).exchange()
-                        .expectStatus().isBadRequest
+                and("Garbage Body") {
+                    val invalidBody = mapOf("garbage" to "trash")
+                    then("BadRequest; DB untouched") {
+                        webTestClient.post().uri("/visits").bodyValue(invalidBody).exchange()
+                            .expectStatus().isBadRequest
 
-                    verify { visitRepository wasNot called }
+                        verify { visitRepository wasNot called }
+                    }
+                }
+                and("Invalid Hour") {
+                    val invalidBody = validBody.copy(visitTime = validBody.visitTime.plusSeconds(3))
+                    then("BadRequest; DB untouched") {
+                        webTestClient.post().uri("/visits").bodyValue(invalidBody).exchange()
+                            .expectStatus().isBadRequest
+                    }
                 }
             }
         }
@@ -217,6 +226,15 @@ class VisitRouterTest : BehaviorSpec() {
                     coVerify(exactly = 1) { visitRepository.findById(validId) }
                     coVerify(inverse = true) { visitRepository.findByVisitDateAndVisitTimeAndDoctorId(any(), any(), any()) }
                     coVerify(inverse = true) { visitRepository.save(any()) }
+                }
+            }
+            `when`("Invalid hour") {
+                val body = validBody.copy(visitTime = validBody.visitTime.plusSeconds(3))
+                then("BadRequest") {
+                    webTestClient.put().uri("/visits/$validId").bodyValue(body).exchange()
+                        .expectStatus().isBadRequest
+
+                    verify { visitRepository wasNot called }
                 }
             }
             `when`("Valid Request") {
