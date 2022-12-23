@@ -3,6 +3,7 @@ package dev.mtpeter.rsqrecruitmenttask.doctor
 import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
+import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
@@ -27,6 +29,7 @@ import org.springframework.test.web.reactive.server.expectBodyList
 class DoctorRouterTest : BehaviorSpec() {
 
     val doctorRepository: DoctorRepository = mockk()
+    val visitRepository: VisitRepository = mockk()
     val tenantAwareRouting: TenantAwareRouting = TenantAwareRoutingDummy()
     val doctorService = DoctorService(doctorRepository)
     val doctorHandler = DoctorHandler(doctorService)
@@ -214,11 +217,24 @@ class DoctorRouterTest : BehaviorSpec() {
             }
         }
         given("DELETE Request on /doctors/{id}") {
+
             //In case of doctors, let's return their state before deletion
             `when`("Valid id") {
                 val validId = Arb.long(10L..20L).single()
+                and("Doctor has visits") {
+                    coEvery { visitRepository.existsByDoctorId(validId) } returns true
+                    then("Returns Conflict") {
+                        webTestClient.delete().uri("/doctors/$validId").exchange()
+                            .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+
+                        coVerify(exactly = 1) { doctorRepository.findById(validId) }
+                        coVerify(exactly = 1) { visitRepository.existsByDoctorId(validId) }
+                        coVerify(inverse = true) { doctorRepository.deleteById(validId) }
+                    }
+                }
                 and("Found") {
                     val docToDelete = doctorArb.single().copy(id = validId)
+                    coEvery { visitRepository.existsByDoctorId(validId) } returns false
                     coEvery { doctorRepository.findById(validId) } returns docToDelete
                     coEvery { doctorRepository.deleteById(validId) } just runs
                     then("Returns deleted doctor and deletes them from DB") {
@@ -227,6 +243,7 @@ class DoctorRouterTest : BehaviorSpec() {
                             .expectBody<Doctor>().isEqualTo(docToDelete)
 
                         coVerify(exactly = 1) { doctorRepository.findById(validId) }
+                        coVerify(exactly = 1) { visitRepository.existsByDoctorId(validId) }
                         coVerify(exactly = 1) { doctorRepository.deleteById(validId) }
                     }
                 }
@@ -237,6 +254,7 @@ class DoctorRouterTest : BehaviorSpec() {
                             .expectStatus().isNotFound
 
                         coVerify(exactly = 1) { doctorRepository.findById(validId) }
+                        coVerify(inverse = true) { visitRepository.existsByDoctorId(validId) }
                         coVerify(inverse = true) { doctorRepository.deleteById(any()) }
                     }
                 }

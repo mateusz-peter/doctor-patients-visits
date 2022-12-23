@@ -13,4 +13,6 @@ interface VisitRepository : CoroutineCrudRepository<Visit, Long> {
     fun findByPatientId(patientId: Long, pageable: Pageable): Flow<Visit>
     suspend fun countByPatientId(patientId: Long): Long
     suspend fun findByVisitDateAndVisitTimeAndDoctorId(visitDate: LocalDate, visitTime: LocalTime, doctorId: Long): Visit?
+    suspend fun existsByPatientId(patientId: Long): Boolean
+    suspend fun existsByDoctorId(doctorId: Long): Boolean
 }

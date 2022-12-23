@@ -29,4 +29,5 @@ CREATE TABLE visit(
     CHECK ( date_part('microseconds', visit_hour) = 0 )
 );
 CREATE INDEX ON visit(patient_id);
+CREATE INDEX ON visit(doctor_id);
 CREATE INDEX ON visit(visit_date, visit_hour);
