@@ -1,5 +1,6 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor
 
+import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +19,8 @@ class DoctorRouter {
 
     @Bean
     fun routeDoctors(
-        doctorHandler: DoctorHandler
+        doctorHandler: DoctorHandler,
+        tenantAwareRouting: TenantAwareRouting
     ) = coRouter {
         GET("/doctors", doctorHandler::getAllDoctors)
         GET("/doctors/paged", doctorHandler::getPagedDoctors)
@@ -26,6 +28,8 @@ class DoctorRouter {
         POST("/doctors", doctorHandler::createDoctor)
         PUT("/doctors/{id}", doctorHandler::updateDoctor)
         DELETE("/doctors/{id}", doctorHandler::deleteDoctor)
+
+        filter(tenantAwareRouting::tenantAwareFilter)
     }
 }
 

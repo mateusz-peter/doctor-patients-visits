@@ -1,6 +1,8 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
+import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
+import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
@@ -25,10 +27,11 @@ import org.springframework.test.web.reactive.server.expectBodyList
 class DoctorRouterTest : BehaviorSpec() {
 
     val doctorRepository: DoctorRepository = mockk()
+    val tenantAwareRouting: TenantAwareRouting = TenantAwareRoutingDummy()
     val doctorService = DoctorService(doctorRepository)
     val doctorHandler = DoctorHandler(doctorService)
     val doctorRouter = DoctorRouter()
-    val webTestClient= WebTestClient.bindToRouterFunction(doctorRouter.routeDoctors(doctorHandler)).build()
+    val webTestClient= WebTestClient.bindToRouterFunction(doctorRouter.routeDoctors(doctorHandler, tenantAwareRouting)).build()
 
     val doctorArb = arbitrary {
         val firstName = Arb.firstName().bind().name
