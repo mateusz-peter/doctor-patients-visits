@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 
@@ -24,6 +25,7 @@ class VisitRouter {
     ) = coRouter {
         GET("/visits", visitHandler::getAllVisits)
         GET("/visits/paged", visitHandler::getVisitsPaged)
+        POST("/visits", visitHandler::scheduleVisit)
         filter(tenantAwareRouting::tenantAwareFilter)
     }
 }
@@ -45,6 +47,13 @@ class VisitHandler(
         val page = visitService.getVisitsPaged(pageNo, pageSize, sort, patientId)
         return ServerResponse.ok().bodyValueAndAwait(page)
     }
+
+    suspend fun scheduleVisit(serverRequest: ServerRequest): ServerResponse {
+        val body = serverRequest.awaitBodyOrNull<VisitDTO>() ?: return ServerResponse.badRequest().buildAndAwait()
+        val saved = visitService.scheduleVisit(body.toVisit()) ?: return ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
+        val location = serverRequest.uriBuilder().path("/${saved.id}").build()
+        return ServerResponse.created(location).bodyValueAndAwait(saved)
+    }
 }
 
 @Component
@@ -65,5 +74,12 @@ class VisitService(
         }
 
         PageImpl(visits.await(), pageRequest, total.await())
+    }
+
+    suspend fun scheduleVisit(visit: Visit): Visit? {
+        val conflictingVisit = visitRepository.findByVisitDateAndVisitTimeAndDoctorId(visit.visitDate, visit.visitTime, visit.doctorId)
+        if (conflictingVisit != null) return null
+
+        return visitRepository.save(visit)
     }
 }
