@@ -230,7 +230,7 @@ class PatientRouterTest() : BehaviorSpec() {
             `when`("/patient/1 has visits") {
                 and("?cascade=true") {
                     coEvery { patientRepository.existsById(1) } returns true
-                    coEvery { visitRepository.existsByPatientId(1) } returns true
+                    coEvery { visitRepository.removeByPatientId(1) } just runs
                     coEvery { patientRepository.deleteById(1) } just runs
 
                     then("Delete visits and the patient") {
@@ -238,13 +238,13 @@ class PatientRouterTest() : BehaviorSpec() {
                             .expectStatus().isNoContent
 
                         coVerify(exactly = 1) { patientRepository.existsById(1) }
-                        coVerify(exactly = 1) { visitRepository.existsByPatientId(1) }
+                        coVerify(exactly = 1) { visitRepository.removeByPatientId(1) }
                         coVerify(exactly = 1) { patientRepository.deleteById(1) }
                     }
                 }
                 and("By default") {
                     coEvery { patientRepository.existsById(1) } returns true
-                    coEvery { visitRepository.removeByPatientId(1) } just runs
+                    coEvery { visitRepository.existsByPatientId(1) } returns true
                     coEvery { patientRepository.deleteById(1) } just runs
 
                     then("Conflict") {
@@ -252,7 +252,7 @@ class PatientRouterTest() : BehaviorSpec() {
                             .expectStatus().isEqualTo(HttpStatus.CONFLICT)
 
                         coVerify(exactly = 1) { patientRepository.existsById(1) }
-                        coVerify(exactly = 1) { visitRepository.deleteById(1) }
+                        coVerify(exactly = 1) { visitRepository.existsByPatientId(1) }
                         coVerify(inverse = true) { patientRepository.deleteById(1) }
                     }
                 }

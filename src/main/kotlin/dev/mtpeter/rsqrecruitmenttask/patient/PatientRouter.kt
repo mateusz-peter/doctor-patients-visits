@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 
@@ -83,11 +84,16 @@ class PatientHandler(
 
     suspend fun deletePatient(request: ServerRequest): ServerResponse {
         val id = request.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+        val cascade = request.queryParamOrNull("cascade")?.toBoolean() ?: false
 
-        val exists = patientRepository.existsById(id)
-        if(!exists) return ServerResponse.notFound().buildAndAwait()
+        if(!patientRepository.existsById(id))
+            return ServerResponse.notFound().buildAndAwait()
+        if(!cascade && visitRepository.existsByPatientId(id))
+            return ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
+        if(cascade)
+            visitRepository.removeByPatientId(id)
 
         patientRepository.deleteById(id)
-        return ServerResponse.ok().buildAndAwait()
+        return ServerResponse.noContent().buildAndAwait()
     }
 }
