@@ -2,6 +2,8 @@ package dev.mtpeter.rsqrecruitmenttask.patient
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
+import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
+import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
@@ -16,17 +18,17 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.ServerResponse
 
 class PatientRouterTest() : BehaviorSpec() {
 
     private val patientRepository: PatientRepository = mockk()
-    private val patientHandler = PatientHandler(patientRepository)
+    private val visitRepository: VisitRepository = mockk()
+    private val patientHandler = PatientHandler(patientRepository, visitRepository)
     private val patientRouter = PatientRouter()
-    private val tenantAwareRouting: TenantAwareRouting = mockk()
+    private val tenantAwareRouting: TenantAwareRouting = TenantAwareRoutingDummy()
     private val webTestClient = WebTestClient
         .bindToRouterFunction(patientRouter.routePatients(patientHandler, tenantAwareRouting)).build()
 
@@ -38,13 +40,6 @@ class PatientRouterTest() : BehaviorSpec() {
     }
 
     init {
-
-        coEvery { tenantAwareRouting.tenantAwareFilter(any(), any()) } coAnswers  { call ->
-            val r = firstArg<ServerRequest>()
-            val f = secondArg<suspend (ServerRequest) -> ServerResponse>()
-            f(r)
-        }
-
         given("GET Request on /patients/paged") {
             and("11 random patients") {
                 val patients = patientArb.take(11)
@@ -102,7 +97,7 @@ class PatientRouterTest() : BehaviorSpec() {
             coEvery { patientRepository.findById(1) } returns examplePatient
             coEvery { patientRepository.findById(2) } returns null
 
-            `when`("GET Request on /patients/1") {
+            `when`("/patients/1") {
                 then("Request is successful and we get the patient; Had searched in DB") {
                     webTestClient.get().uri { it.path("/patients/{id}").build(1) }
                         .exchange()
@@ -114,7 +109,7 @@ class PatientRouterTest() : BehaviorSpec() {
                 }
             }
 
-            `when`("GET Request on /patients/2") {
+            `when`("/patients/2") {
                 then("Request is replied with NotFound; Had searched in DB") {
                     webTestClient.get().uri("/patients/2").exchange()
                         .expectStatus().isNotFound
@@ -123,7 +118,7 @@ class PatientRouterTest() : BehaviorSpec() {
                 }
             }
 
-            `when`("GET Request on /patients/Jan (Invalid request)") {
+            `when`("Invalid request") {
                 then("Bad Request; Hadn't searched in DB") {
                     webTestClient.get().uri("/patients/Jan").exchange()
                         .expectStatus().isBadRequest
@@ -149,6 +144,7 @@ class PatientRouterTest() : BehaviorSpec() {
         }
 
         given("POST Request on /patients") {
+
             `when`("a new Patient in body") {
                 val postBody = PatientDTO("Jan", "Nowak-Jeziorański", "Radio Wolna Europa")
                 coEvery { patientRepository.save(postBody.toPatient()) } returns postBody.toPatient(1)
@@ -231,13 +227,45 @@ class PatientRouterTest() : BehaviorSpec() {
 
         given("DELETE Request on /patients/{id}") {
 
+            `when`("/patient/1 has visits") {
+                and("?cascade=true") {
+                    coEvery { patientRepository.existsById(1) } returns true
+                    coEvery { visitRepository.existsByPatientId(1) } returns true
+                    coEvery { patientRepository.deleteById(1) } just runs
+
+                    then("Delete visits and the patient") {
+                        webTestClient.delete().uri("/patients/1?cascade=true").exchange()
+                            .expectStatus().isNoContent
+
+                        coVerify(exactly = 1) { patientRepository.existsById(1) }
+                        coVerify(exactly = 1) { visitRepository.existsByPatientId(1) }
+                        coVerify(exactly = 1) { patientRepository.deleteById(1) }
+                    }
+                }
+                and("By default") {
+                    coEvery { patientRepository.existsById(1) } returns true
+                    coEvery { visitRepository.removeByPatientId(1) } just runs
+                    coEvery { patientRepository.deleteById(1) } just runs
+
+                    then("Conflict") {
+                        webTestClient.delete().uri("/patients/1").exchange()
+                            .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+
+                        coVerify(exactly = 1) { patientRepository.existsById(1) }
+                        coVerify(exactly = 1) { visitRepository.deleteById(1) }
+                        coVerify(inverse = true) { patientRepository.deleteById(1) }
+                    }
+                }
+            }
+
             `when`("/patient/1 does exist") {
                 coEvery { patientRepository.existsById(1) } returns true
+                coEvery { visitRepository.existsByPatientId(1) } returns false
                 coEvery { patientRepository.deleteById(1) } just Runs
                 then("Patient is deleted, got OK") {
                     webTestClient.delete().uri("/patients/1")
                         .exchange()
-                        .expectStatus().isOk
+                        .expectStatus().isNoContent
                     coVerify(exactly = 1) { patientRepository.existsById(1) }
                     coVerify(exactly = 1) { patientRepository.deleteById(1) }
                 }
@@ -252,7 +280,7 @@ class PatientRouterTest() : BehaviorSpec() {
                     coVerify(inverse = true) { patientRepository.deleteById(any()) }
                 }
             }
-            `when`("/patient/Jan - invalid request") {
+            `when`("invalid request") {
                 then("BadRequest") {
                     webTestClient.delete().uri("/patients/Jan")
                         .exchange()

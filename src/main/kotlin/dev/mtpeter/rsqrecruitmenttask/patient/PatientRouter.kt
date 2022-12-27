@@ -1,6 +1,7 @@
 package dev.mtpeter.rsqrecruitmenttask.patient
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
+import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
@@ -32,7 +33,8 @@ class PatientRouter {
 
 @Component
 class PatientHandler(
-    private val patientRepository: PatientRepository
+    private val patientRepository: PatientRepository,
+    private val visitRepository: VisitRepository
 ) {
 
     suspend fun getAllPatientsPaged(request: ServerRequest): ServerResponse = coroutineScope {
