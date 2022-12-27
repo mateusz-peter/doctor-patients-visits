@@ -218,20 +218,36 @@ class DoctorRouterTest : BehaviorSpec() {
         }
         given("DELETE Request on /doctors/{id}") {
 
-            //In case of doctors, let's return their state before deletion
             `when`("Valid id") {
                 val validId = Arb.long(10L..20L).single()
                 val docToDelete = doctorArb.single().copy(id = validId)
                 and("Doctor has visits") {
-                    coEvery { doctorRepository.findById(validId) } returns docToDelete
-                    coEvery { visitRepository.existsByDoctorId(validId) } returns true
-                    then("Returns Conflict") {
-                        webTestClient.delete().uri("/doctors/$validId").exchange()
-                            .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+                    and("?cascade=true") {
+                        coEvery { doctorRepository.findById(validId) } returns docToDelete
+                        coEvery { visitRepository.removeByDoctorId(validId) } just runs
+                        coEvery { doctorRepository.deleteById(validId) } just runs
 
-                        coVerify(exactly = 1) { doctorRepository.findById(validId) }
-                        coVerify(exactly = 1) { visitRepository.existsByDoctorId(validId) }
-                        coVerify(inverse = true) { doctorRepository.deleteById(validId) }
+                        then("Remove visits and the doctor") {
+                            webTestClient.delete().uri("/doctors/$validId?cascade=true").exchange()
+                                .expectStatus().isOk
+                                .expectBody<Doctor>().isEqualTo(docToDelete)
+
+                            coVerify(exactly = 1) { doctorRepository.findById(validId) }
+                            coVerify(exactly = 1) { visitRepository.removeByDoctorId(validId) }
+                            coVerify(exactly = 1) { doctorRepository.deleteById(validId) }
+                        }
+                    }
+                    and("By default") {
+                        coEvery { doctorRepository.findById(validId) } returns docToDelete
+                        coEvery { visitRepository.existsByDoctorId(validId) } returns true
+                        then("Returns Conflict") {
+                            webTestClient.delete().uri("/doctors/$validId").exchange()
+                                .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+
+                            coVerify(exactly = 1) { doctorRepository.findById(validId) }
+                            coVerify(exactly = 1) { visitRepository.existsByDoctorId(validId) }
+                            coVerify(inverse = true) { doctorRepository.deleteById(validId) }
+                        }
                     }
                 }
                 and("Found") {
@@ -260,7 +276,7 @@ class DoctorRouterTest : BehaviorSpec() {
                     }
                 }
             }
-            `when`("Invalid id") {
+           `when`("Invalid id") {
                 val invalidId = Arb.color().single().value
                 then("BadRequest; DB untouched") {
                     webTestClient.delete().uri("/doctors/$invalidId").exchange()

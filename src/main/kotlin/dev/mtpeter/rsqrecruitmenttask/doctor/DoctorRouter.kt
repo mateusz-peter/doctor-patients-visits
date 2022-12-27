@@ -76,7 +76,9 @@ class DoctorHandler(
 
     suspend fun deleteDoctor(serverRequest: ServerRequest): ServerResponse {
         val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
-        return when(val result = doctorService.deleteDoctor(id)) {
+        val cascade = serverRequest.queryParamOrNull("cascade")?.toBoolean() ?: false
+
+        return when(val result = doctorService.deleteDoctor(id, cascade)) {
             is DoctorNotFound -> ServerResponse.notFound().buildAndAwait()
             is DoctorHasVisits -> ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
             is DeletedDoctor -> ServerResponse.ok().bodyValueAndAwait(result.doctor)
@@ -110,9 +112,12 @@ class DoctorService(
         return doctorRepository.save(doctorDTO.toDoctor())
     }
 
-    suspend fun deleteDoctor(id: Long): RemovalResult {
+    suspend fun deleteDoctor(id: Long, cascade: Boolean): RemovalResult {
         val docToDelete = doctorRepository.findById(id) ?: return DoctorNotFound
-        if (visitRepository.existsByDoctorId(id)) return DoctorHasVisits
+        if(!cascade && visitRepository.existsByDoctorId(id))
+            return DoctorHasVisits
+        if(cascade)
+            visitRepository.removeByDoctorId(id)
 
         doctorRepository.deleteById(id)
         return DeletedDoctor(docToDelete)
