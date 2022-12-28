@@ -16,22 +16,24 @@ class MTIntegrationTest @Autowired constructor(
         .bindToServer().baseUrl("http://localhost:${port}").build()
 
     init {
-        this.given("GET Request on /patients") {
-            `when`("No X-TenantID header provided") {
-                then("We get BadRequest") {
-                    webTestClient.get().uri("/patients").exchange().expectStatus().isBadRequest
+        this.given("Connection to empty database of tenant 'tenantA'") {
+            `when`("GET Request on /patients") {
+                and("Request doesn't include X-TenantID header") {
+                    then("Response with BadRequest") {
+                        webTestClient.get().uri("/patients").exchange().expectStatus().isBadRequest
+                    }
                 }
-            }
-            `when`("Valid tenant provided in X-TenantID header") {
-                then("We get Ok") {
-                    webTestClient.get().uri("/patients").header("X-TenantID", "tenantA")
-                        .exchange().expectStatus().isOk
+                and("Request include valid TenantId in X-TenantID header") {
+                    then("Response with Ok") {
+                        webTestClient.get().uri("/patients").header("X-TenantID", "tenantA")
+                            .exchange().expectStatus().isOk
+                    }
                 }
-            }
-            `when`("Invalid tenant is provided in X-TenantID header") {
-                then("We get BadRequest") {
-                    webTestClient.get().uri("/patients").header("X-TenantID", "tenantX")
-                        .exchange().expectStatus().isBadRequest
+                and("Request includes invalid TenantId in X-TenantID header") {
+                    then("Response with BadRequest") {
+                        webTestClient.get().uri("/patients").header("X-TenantID", "tenantX")
+                            .exchange().expectStatus().isBadRequest
+                    }
                 }
             }
         }
