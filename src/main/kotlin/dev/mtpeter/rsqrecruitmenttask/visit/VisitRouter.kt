@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.server.*
 
 @Configuration
@@ -69,11 +70,13 @@ class VisitHandler(
     }
 }
 
+@Transactional
 @Component
 class VisitService(
     private val visitRepository: VisitRepository
 ) {
-    fun getAllVisits(): Flow<Visit> = visitRepository.findAll()
+
+    suspend fun getAllVisits(): Flow<Visit> = visitRepository.findAll()
 
     suspend fun getVisitsPaged(pageNo: Int, pageSize: Int, sort: Sort, patientId: Long?): Page<Visit> = coroutineScope {
         val pageRequest = PageRequest.of(pageNo, pageSize, sort)

@@ -7,17 +7,27 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
+import org.springframework.r2dbc.connection.R2dbcTransactionManager
 import org.springframework.r2dbc.connection.lookup.AbstractRoutingConnectionFactory
+import org.springframework.transaction.annotation.EnableTransactionManagement
+import org.springframework.transaction.reactive.TransactionalOperator
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 
 @Configuration
 @EnableR2dbcRepositories
+@EnableTransactionManagement
 class PostgresConfiguration(
     tenantProperties: TenantProperties
 ) : AbstractR2dbcConfiguration() {
 
     val tenants = tenantProperties.tenants
+
+    @Bean
+    fun transactionalOperator(transactionManager: R2dbcTransactionManager) = TransactionalOperator.create(transactionManager)
+
+    @Bean
+    fun transactionManager(connectionFactory: ConnectionFactory) = R2dbcTransactionManager(connectionFactory)
 
     @Bean
     override fun connectionFactory(): ConnectionFactory {
@@ -47,6 +57,7 @@ private class TenantAwareConnectionFactory(
 
     override fun determineCurrentLookupKey(): Mono<Any> {
         return Mono.deferContextual { it.toMono() }
+            .map { println(it); it }
             .filter { it.hasKey("TenantId") }
             .map { it.get<String>("TenantId") }
             .switchIfEmpty(Mono.defer { NoTenantException().toMono() })
