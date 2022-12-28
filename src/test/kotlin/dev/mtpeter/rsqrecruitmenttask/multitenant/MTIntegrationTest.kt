@@ -27,7 +27,7 @@ class MTIntegrationTest @Autowired constructor(
         .bindToServer().baseUrl("http://localhost:${port}").build()
 
     init {
-        this.given("Empty database of tenant 'tenantA'") {
+        this.given("Valid tenant 'tenantA'") {
             `when`("GET Request on /patients") {
                 and("Request doesn't include X-TenantID header") {
                     then("Response with BadRequest") {

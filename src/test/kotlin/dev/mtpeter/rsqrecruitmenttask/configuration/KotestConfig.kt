@@ -2,12 +2,13 @@ package dev.mtpeter.rsqrecruitmenttask.configuration
 
 import dev.mtpeter.rsqrecruitmenttask.doctor.Doctor
 import dev.mtpeter.rsqrecruitmenttask.patient.Patient
+import dev.mtpeter.rsqrecruitmenttask.visit.Visit
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.IsolationMode
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.*
 import io.kotest.property.arbs.color
 import io.kotest.property.arbs.firstName
 import io.kotest.property.arbs.geo.country
@@ -73,4 +74,13 @@ val doctorArb = arbitrary {
     val lastName = Arb.lastName().bind().name
     val specialty = Arb.color().bind().value
     Doctor(null, firstName, lastName, specialty)
+}
+
+val visitArb = arbitrary {
+    val visitDate = Arb.localDate().single()
+    val visitTime = Arb.localTime().single().withSecond(0).withNano(0)
+    val place = Arb.country().single().name
+    val doctorId = Arb.long(10L..20L).single()
+    val patientId = Arb.long(10L..20L).single()
+    Visit(null, visitDate, visitTime, place, doctorId, patientId)
 }

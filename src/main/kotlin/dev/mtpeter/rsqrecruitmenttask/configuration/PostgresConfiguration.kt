@@ -57,7 +57,6 @@ private class TenantAwareConnectionFactory(
 
     override fun determineCurrentLookupKey(): Mono<Any> {
         return Mono.deferContextual { it.toMono() }
-            .map { println(it); it }
             .filter { it.hasKey("TenantId") }
             .map { it.get<String>("TenantId") }
             .switchIfEmpty(Mono.defer { NoTenantException().toMono() })
