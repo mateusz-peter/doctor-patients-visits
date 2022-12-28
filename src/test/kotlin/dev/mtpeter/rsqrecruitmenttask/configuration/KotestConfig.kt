@@ -1,9 +1,15 @@
 package dev.mtpeter.rsqrecruitmenttask.configuration
 
+import dev.mtpeter.rsqrecruitmenttask.patient.Patient
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.IsolationMode
 import io.kotest.extensions.spring.SpringExtension
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbs.firstName
+import io.kotest.property.arbs.geo.country
+import io.kotest.property.arbs.lastName
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import org.testcontainers.utility.MountableFile
@@ -38,4 +44,11 @@ class KotestConfig : AbstractProjectConfig() {
             )
         }
     }
+}
+
+val patientArb = arbitrary {
+    val firstName = Arb.firstName().bind().toString()
+    val lastName = Arb.lastName().bind().toString()
+    val address = Arb.country().bind().toString()
+    Patient(null, firstName, lastName, address)
 }
