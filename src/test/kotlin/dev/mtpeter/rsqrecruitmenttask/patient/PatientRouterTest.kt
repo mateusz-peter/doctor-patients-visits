@@ -11,7 +11,8 @@ class PatientRouterTest() : BehaviorSpec() {
 
     private val patientRepository: PatientRepository = mockk()
     private val visitRepository: VisitRepository = mockk()
-    private val patientHandler = PatientHandler(patientRepository, visitRepository)
+    private val patientService = PatientService(patientRepository, visitRepository)
+    private val patientHandler = PatientHandler(patientService)
     private val patientRouter = PatientRouter()
     private val tenantAwareRouting: TenantAwareRouting = TenantAwareRoutingDummy()
     private val webTestClient = WebTestClient
