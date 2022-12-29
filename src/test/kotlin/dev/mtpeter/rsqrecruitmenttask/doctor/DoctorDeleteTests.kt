@@ -33,9 +33,9 @@ fun doctorDeleteTest(doctorRepository: DoctorRepository, visitRepository: VisitR
                             .expectBody<Doctor>().isEqualTo(docToDelete)
 
                         coVerify(exactly = 1) { doctorRepository.findById(validId) }
-                        coVerify(exactly = 1) { visitRepository.existsByDoctorId(validId) }
-                        coVerify(inverse = true) { doctorRepository.deleteById(validId) }
-                        coVerify(inverse = true) { visitRepository.removeByDoctorId(validId) }
+                        coVerify(inverse = true) { visitRepository.existsByDoctorId(validId) }
+                        coVerify(exactly = 1) { doctorRepository.deleteById(validId) }
+                        coVerify(exactly = 1) { visitRepository.removeByDoctorId(validId) }
                     }
                 }
                 and("cascade=false (default)") {
@@ -44,9 +44,9 @@ fun doctorDeleteTest(doctorRepository: DoctorRepository, visitRepository: VisitR
                             .expectStatus().isEqualTo(HttpStatus.CONFLICT)
 
                         coVerify(exactly = 1) { doctorRepository.findById(validId) }
-                        coVerify(inverse = true) { visitRepository.existsByDoctorId(validId) }
-                        coVerify(exactly = 1) { doctorRepository.deleteById(validId) }
-                        coVerify(exactly = 1) { visitRepository.removeByDoctorId(validId) }
+                        coVerify(exactly = 1) { visitRepository.existsByDoctorId(validId) }
+                        coVerify(inverse = true) { doctorRepository.deleteById(validId) }
+                        coVerify(inverse = true) { visitRepository.removeByDoctorId(validId) }
                     }
                 }
             }

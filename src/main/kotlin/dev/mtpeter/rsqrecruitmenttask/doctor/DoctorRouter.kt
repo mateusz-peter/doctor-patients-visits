@@ -112,7 +112,7 @@ class DoctorService(
         val exists = doctorRepository.existsById(id)
         if(!exists) return null
 
-        return doctorRepository.save(doctorDTO.toDoctor())
+        return doctorRepository.save(doctorDTO.toDoctor(id))
     }
 
     @Transactional
