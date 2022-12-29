@@ -18,7 +18,6 @@ import kotlinx.coroutines.reactor.asCoroutineContext
 import kotlinx.coroutines.withContext
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
-import org.testcontainers.utility.MountableFile
 import reactor.util.context.Context
 
 const val TENANT_A = "tenantA"
@@ -39,10 +38,7 @@ class KotestConfig : AbstractProjectConfig() {
 
 fun postgresContainer(tenantId: String) = PostgreSQLContainer<Nothing>("postgres:15.1-alpine").apply {
     startupAttempts = 1
-    withCopyToContainer(
-        MountableFile.forClasspathResource("dbSchema.sql"),
-        "/docker-entrypoint-initdb.d/init.sql"
-    )
+    withInitScript("dbSchema.sql")
     withUsername("test")
     withPassword("test")
     withDatabaseName(tenantId)

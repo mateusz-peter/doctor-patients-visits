@@ -1,6 +1,10 @@
-package dev.mtpeter.rsqrecruitmenttask.visit
+package dev.mtpeter.rsqrecruitmenttask.visit.handler
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
+import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
+import dev.mtpeter.rsqrecruitmenttask.visit.router.VisitHandler
+import dev.mtpeter.rsqrecruitmenttask.visit.router.VisitRouter
+import dev.mtpeter.rsqrecruitmenttask.visit.router.VisitService
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.mockk
 import org.springframework.test.web.reactive.server.WebTestClient

@@ -1,7 +1,11 @@
-package dev.mtpeter.rsqrecruitmenttask.patient
+package dev.mtpeter.rsqrecruitmenttask.patient.handler
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
+import dev.mtpeter.rsqrecruitmenttask.patient.PatientRepository
+import dev.mtpeter.rsqrecruitmenttask.patient.router.PatientHandler
+import dev.mtpeter.rsqrecruitmenttask.patient.router.PatientRouter
+import dev.mtpeter.rsqrecruitmenttask.patient.router.PatientService
 import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.mockk

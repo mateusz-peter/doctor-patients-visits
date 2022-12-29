@@ -1,7 +1,9 @@
-package dev.mtpeter.rsqrecruitmenttask.patient
+package dev.mtpeter.rsqrecruitmenttask.patient.handler
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
 import dev.mtpeter.rsqrecruitmenttask.configuration.patientArb
+import dev.mtpeter.rsqrecruitmenttask.patient.Patient
+import dev.mtpeter.rsqrecruitmenttask.patient.PatientRepository
 import io.kotest.core.spec.style.behaviorSpec
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe

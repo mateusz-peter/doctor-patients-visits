@@ -1,39 +1,12 @@
-package dev.mtpeter.rsqrecruitmenttask.patient
+package dev.mtpeter.rsqrecruitmenttask.patient.router
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
-import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
-import kotlinx.coroutines.async
+import dev.mtpeter.rsqrecruitmenttask.patient.PatientDTO
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.toList
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.server.*
-
-@Configuration
-class PatientRouter {
-
-    @Bean
-    fun routePatients(
-        patientHandler: PatientHandler,
-        tenantAwareRouting: TenantAwareRouting
-    ) = coRouter {
-        GET("/patients", patientHandler::getAllPatients)
-        GET("/patients/paged", patientHandler::getAllPatientsPaged)
-        GET("/patients/{id}", patientHandler::getPatientById)
-        POST("/patients", patientHandler::saveNewPatient)
-        PUT("/patients/{id}", patientHandler::updatePatient)
-        DELETE("/patients/{id}", patientHandler::deletePatient)
-        filter(tenantAwareRouting::tenantAwareFilter)
-    }
-}
 
 @Transactional
 @Component
@@ -89,47 +62,3 @@ class PatientHandler(
         }
     }
 }
-
-@Component
-class PatientService(
-    private val patientRepository: PatientRepository,
-    private val visitRepository: VisitRepository
-) {
-
-    fun getAllPatients(): Flow<Patient> = patientRepository.findAll()
-
-    suspend fun getPatientById(id: Long) = patientRepository.findById(id)
-
-    @Transactional(readOnly = true)
-    suspend fun getPagedPatients(pageNo: Int, pageSize: Int, sort: Sort): Page<Patient> = coroutineScope {
-        val pageRequest = PageRequest.of(pageNo, pageSize, sort)
-
-        val patients = async { patientRepository.findAllBy(pageRequest).toList() }
-        val total = async { patientRepository.count() }
-
-        PageImpl(patients.await(), pageRequest, total.await())
-    }
-
-    suspend fun saveNewPatient(patientDTO: PatientDTO): Patient = patientRepository.save(patientDTO.toPatient())
-
-    @Transactional
-    suspend fun updatePatient(id: Long, patientDTO: PatientDTO): Patient? {
-        if(!patientRepository.existsById(id)) return null
-        return patientRepository.save(patientDTO.toPatient(id))
-    }
-
-    @Transactional
-    suspend fun deletePatient(id: Long, cascade: Boolean): RemovalResult {
-        if (!patientRepository.existsById(id)) return PatientNotFound
-        if (!cascade && visitRepository.existsByPatientId(id)) return PatientHasVisits
-        if (cascade) visitRepository.removeByPatientId(id)
-
-        patientRepository.deleteById(id)
-        return DeletedSuccess
-    }
-}
-
-sealed interface RemovalResult
-object PatientNotFound : RemovalResult
-object PatientHasVisits : RemovalResult
-object DeletedSuccess : RemovalResult

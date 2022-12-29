@@ -1,6 +1,9 @@
-package dev.mtpeter.rsqrecruitmenttask.doctor
+package dev.mtpeter.rsqrecruitmenttask.doctor.handler
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.doctorArb
+import dev.mtpeter.rsqrecruitmenttask.doctor.Doctor
+import dev.mtpeter.rsqrecruitmenttask.doctor.DoctorRepository
+import dev.mtpeter.rsqrecruitmenttask.doctor.toDTO
 import io.kotest.core.spec.style.behaviorSpec
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.long

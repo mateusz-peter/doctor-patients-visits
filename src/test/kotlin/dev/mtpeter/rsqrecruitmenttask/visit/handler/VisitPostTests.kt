@@ -1,6 +1,9 @@
-package dev.mtpeter.rsqrecruitmenttask.visit
+package dev.mtpeter.rsqrecruitmenttask.visit.handler
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.visitArb
+import dev.mtpeter.rsqrecruitmenttask.visit.Visit
+import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
+import dev.mtpeter.rsqrecruitmenttask.visit.toDTO
 import io.kotest.core.spec.style.behaviorSpec
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.long
