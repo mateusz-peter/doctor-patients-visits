@@ -70,14 +70,14 @@ class VisitHandler(
     }
 }
 
-@Transactional
 @Component
 class VisitService(
     private val visitRepository: VisitRepository
 ) {
 
-    suspend fun getAllVisits(): Flow<Visit> = visitRepository.findAll()
+    fun getAllVisits(): Flow<Visit> = visitRepository.findAll()
 
+    @Transactional(readOnly = true)
     suspend fun getVisitsPaged(pageNo: Int, pageSize: Int, sort: Sort, patientId: Long?): Page<Visit> = coroutineScope {
         val pageRequest = PageRequest.of(pageNo, pageSize, sort)
         val visitFlow =
@@ -92,6 +92,7 @@ class VisitService(
         PageImpl(visits.await(), pageRequest, total.await())
     }
 
+    @Transactional
     suspend fun scheduleVisit(visit: Visit): Visit? {
         val conflictingVisit = visitRepository.findByVisitDateAndVisitTimeAndDoctorId(visit.visitDate, visit.visitTime, visit.doctorId)
         if (conflictingVisit != null) return null
@@ -99,6 +100,7 @@ class VisitService(
         return visitRepository.save(visit)
     }
 
+    @Transactional
     suspend fun rescheduleVisit(visitToUpdate: Visit): RescheduleResult {
         val existingVisit = visitRepository.findById(visitToUpdate.id!!) ?: return ExistingVisitNotFound
         if(visitToUpdate.patientId != existingVisit.patientId) return TryingToChangePatient

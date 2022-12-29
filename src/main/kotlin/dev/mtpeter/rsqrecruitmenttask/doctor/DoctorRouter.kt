@@ -87,14 +87,14 @@ class DoctorHandler(
     }
 }
 
-@Transactional
 @Component
 class DoctorService(
     private val doctorRepository: DoctorRepository,
     private val visitRepository: VisitRepository
 ) {
-    suspend fun getAllDoctors(): Flow<Doctor> = doctorRepository.findAll()
+    fun getAllDoctors(): Flow<Doctor> = doctorRepository.findAll()
 
+    @Transactional(readOnly = true)
     suspend fun getPagedDoctors(pageNo: Int, pageSize: Int, sort: Sort): Page<Doctor> = coroutineScope {
         val pageRequest = PageRequest.of(pageNo, pageSize, sort)
         val pageContent = async { doctorRepository.findAllBy(pageRequest).toList() }
@@ -107,6 +107,7 @@ class DoctorService(
 
     suspend fun createDoctor(doctorDTO: DoctorDTO): Doctor = doctorRepository.save(doctorDTO.toDoctor())
 
+    @Transactional
     suspend fun updateDoctor(id: Long, doctorDTO: DoctorDTO): Doctor? {
         val exists = doctorRepository.existsById(id)
         if(!exists) return null
@@ -114,6 +115,7 @@ class DoctorService(
         return doctorRepository.save(doctorDTO.toDoctor())
     }
 
+    @Transactional
     suspend fun deleteDoctor(id: Long, cascade: Boolean): RemovalResult {
         val docToDelete = doctorRepository.findById(id) ?: return DoctorNotFound
         if(!cascade && visitRepository.existsByDoctorId(id))

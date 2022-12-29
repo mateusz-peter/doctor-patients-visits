@@ -100,7 +100,7 @@ class PatientService(
 
     suspend fun getPatientById(id: Long) = patientRepository.findById(id)
 
-    @Transactional
+    @Transactional(readOnly = true)
     suspend fun getPagedPatients(pageNo: Int, pageSize: Int, sort: Sort): Page<Patient> = coroutineScope {
         val pageRequest = PageRequest.of(pageNo, pageSize, sort)
 
