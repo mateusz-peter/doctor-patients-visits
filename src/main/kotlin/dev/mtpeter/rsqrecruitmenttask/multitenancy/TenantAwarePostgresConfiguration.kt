@@ -1,4 +1,4 @@
-package dev.mtpeter.rsqrecruitmenttask.configuration
+package dev.mtpeter.rsqrecruitmenttask.multitenancy
 
 import io.r2dbc.spi.ConnectionFactory
 import io.r2dbc.spi.ConnectionFactoryMetadata
@@ -17,7 +17,7 @@ import reactor.kotlin.core.publisher.toMono
 @Configuration
 @EnableR2dbcRepositories
 @EnableTransactionManagement
-class PostgresConfiguration(
+class TenantAwarePostgresConfiguration(
     tenantProperties: TenantProperties
 ) : AbstractR2dbcConfiguration() {
 

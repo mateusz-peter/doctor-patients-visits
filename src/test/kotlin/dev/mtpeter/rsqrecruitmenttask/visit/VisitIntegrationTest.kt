@@ -2,7 +2,9 @@ package dev.mtpeter.rsqrecruitmenttask.visit
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.*
 import dev.mtpeter.rsqrecruitmenttask.doctor.DoctorRepository
+import dev.mtpeter.rsqrecruitmenttask.multitenancy.*
 import dev.mtpeter.rsqrecruitmenttask.patient.PatientRepository
+import dev.mtpeter.rsqrecruitmenttask.utilities.*
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe

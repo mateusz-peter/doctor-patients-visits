@@ -1,11 +1,11 @@
-package dev.mtpeter.rsqrecruitmenttask.multitenant
+package dev.mtpeter.rsqrecruitmenttask.multitenancy
 
 import dev.mtpeter.rsqrecruitmenttask.configuration.TENANT_A
 import dev.mtpeter.rsqrecruitmenttask.configuration.TENANT_B
-import dev.mtpeter.rsqrecruitmenttask.configuration.patientArb
-import dev.mtpeter.rsqrecruitmenttask.configuration.withTenant
 import dev.mtpeter.rsqrecruitmenttask.patient.Patient
 import dev.mtpeter.rsqrecruitmenttask.patient.PatientRepository
+import dev.mtpeter.rsqrecruitmenttask.utilities.patientArb
+import dev.mtpeter.rsqrecruitmenttask.utilities.withTenant
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.property.arbitrary.take
 import kotlinx.coroutines.flow.asFlow
@@ -17,7 +17,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBodyList
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class MTIntegrationTest @Autowired constructor(
+class MultitenancyIntegrationTest @Autowired constructor(
     private val patientRepository: PatientRepository,
     @Value("\${local.server.port}")
     private val port: Int

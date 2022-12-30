@@ -1,7 +1,7 @@
 package dev.mtpeter.rsqrecruitmenttask.visit.handler
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
-import dev.mtpeter.rsqrecruitmenttask.configuration.visitArb
+import dev.mtpeter.rsqrecruitmenttask.utilities.RestResponsePage
+import dev.mtpeter.rsqrecruitmenttask.utilities.visitArb
 import dev.mtpeter.rsqrecruitmenttask.visit.Visit
 import dev.mtpeter.rsqrecruitmenttask.visit.VisitRepository
 import io.kotest.core.spec.style.behaviorSpec

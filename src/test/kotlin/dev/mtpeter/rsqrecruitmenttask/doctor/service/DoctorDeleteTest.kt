@@ -1,6 +1,6 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor.service
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.doctorArb
+import dev.mtpeter.rsqrecruitmenttask.utilities.doctorArb
 import dev.mtpeter.rsqrecruitmenttask.doctor.DoctorRepository
 import dev.mtpeter.rsqrecruitmenttask.doctor.router.DeletedDoctor
 import dev.mtpeter.rsqrecruitmenttask.doctor.router.DoctorHasVisits

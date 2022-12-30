@@ -1,4 +1,4 @@
-package dev.mtpeter.rsqrecruitmenttask.configuration
+package dev.mtpeter.rsqrecruitmenttask.multitenancy
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.bind.ConstructorBinding

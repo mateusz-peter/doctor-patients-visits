@@ -1,6 +1,6 @@
 package dev.mtpeter.rsqrecruitmenttask
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.TenantProperties
+import dev.mtpeter.rsqrecruitmenttask.multitenancy.TenantProperties
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.runApplication

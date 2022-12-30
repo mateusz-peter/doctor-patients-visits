@@ -1,22 +1,9 @@
-package dev.mtpeter.rsqrecruitmenttask.configuration
+package dev.mtpeter.rsqrecruitmenttask.multitenancy
 
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.buildAndAwait
-import org.springframework.web.server.ServerWebExchange
-import org.springframework.web.server.WebFilter
-import org.springframework.web.server.WebFilterChain
-import reactor.core.publisher.Mono
-
-@Component
-class TenantFilter : WebFilter {
-    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
-        val tenantId = exchange.request.headers["X-TenantID"].orEmpty().singleOrNull() ?: return chain.filter(exchange)
-        return chain.filter(exchange)
-            .contextWrite { it.put("TenantId", tenantId) }
-    }
-}
 
 @Component
 class TenantAwareRouting(
@@ -34,4 +21,3 @@ class TenantAwareRouting(
         return next(serverRequest)
     }
 }
-

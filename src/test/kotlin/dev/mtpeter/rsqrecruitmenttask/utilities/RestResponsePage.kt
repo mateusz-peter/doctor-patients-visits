@@ -1,4 +1,4 @@
-package dev.mtpeter.rsqrecruitmenttask.configuration
+package dev.mtpeter.rsqrecruitmenttask.utilities
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode

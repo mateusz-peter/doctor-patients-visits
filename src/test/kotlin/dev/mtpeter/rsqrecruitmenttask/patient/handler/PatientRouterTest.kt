@@ -1,7 +1,7 @@
 package dev.mtpeter.rsqrecruitmenttask.patient.handler
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
-import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
+import dev.mtpeter.rsqrecruitmenttask.multitenancy.TenantAwareRouting
+import dev.mtpeter.rsqrecruitmenttask.utilities.TenantAwareRoutingMock
 import dev.mtpeter.rsqrecruitmenttask.patient.PatientRepository
 import dev.mtpeter.rsqrecruitmenttask.patient.router.PatientHandler
 import dev.mtpeter.rsqrecruitmenttask.patient.router.PatientRouter
@@ -18,7 +18,7 @@ class PatientRouterTest() : BehaviorSpec() {
     private val patientService = PatientService(patientRepository, visitRepository)
     private val patientHandler = PatientHandler(patientService)
     private val patientRouter = PatientRouter()
-    private val tenantAwareRouting: TenantAwareRouting = TenantAwareRoutingDummy()
+    private val tenantAwareRouting: TenantAwareRouting = TenantAwareRoutingMock()
     private val webTestClient = WebTestClient
         .bindToRouterFunction(patientRouter.routePatients(patientHandler, tenantAwareRouting)).build()
 

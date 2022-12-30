@@ -1,6 +1,6 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor.handler
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.doctorArb
+import dev.mtpeter.rsqrecruitmenttask.utilities.doctorArb
 import dev.mtpeter.rsqrecruitmenttask.doctor.Doctor
 import dev.mtpeter.rsqrecruitmenttask.doctor.DoctorRepository
 import dev.mtpeter.rsqrecruitmenttask.doctor.toDTO

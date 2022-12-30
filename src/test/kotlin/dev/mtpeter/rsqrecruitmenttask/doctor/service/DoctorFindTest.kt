@@ -1,7 +1,7 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor.service
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.doctorArb
-import dev.mtpeter.rsqrecruitmenttask.configuration.pageRequestArb
+import dev.mtpeter.rsqrecruitmenttask.utilities.doctorArb
+import dev.mtpeter.rsqrecruitmenttask.utilities.pageRequestArb
 import dev.mtpeter.rsqrecruitmenttask.doctor.DoctorRepository
 import dev.mtpeter.rsqrecruitmenttask.doctor.router.DoctorService
 import io.kotest.core.spec.style.behaviorSpec

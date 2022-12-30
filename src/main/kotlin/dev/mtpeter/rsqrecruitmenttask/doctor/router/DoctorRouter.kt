@@ -1,6 +1,6 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor.router
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
+import dev.mtpeter.rsqrecruitmenttask.multitenancy.TenantAwareRouting
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.function.server.coRouter

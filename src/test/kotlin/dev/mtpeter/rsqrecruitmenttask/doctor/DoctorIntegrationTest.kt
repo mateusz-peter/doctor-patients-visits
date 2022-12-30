@@ -1,9 +1,9 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.RestResponsePage
+import dev.mtpeter.rsqrecruitmenttask.utilities.RestResponsePage
 import dev.mtpeter.rsqrecruitmenttask.configuration.TENANT_A
-import dev.mtpeter.rsqrecruitmenttask.configuration.doctorArb
-import dev.mtpeter.rsqrecruitmenttask.configuration.withTenant
+import dev.mtpeter.rsqrecruitmenttask.utilities.doctorArb
+import dev.mtpeter.rsqrecruitmenttask.utilities.withTenant
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldBeSortedWith
