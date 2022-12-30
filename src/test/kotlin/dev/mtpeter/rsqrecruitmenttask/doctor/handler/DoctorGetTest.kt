@@ -39,7 +39,7 @@ fun doctorGetAllTest(doctorRepository: DoctorRepository, webTestClient: WebTestC
     }
     given("10..20 random doctors in DB") {
         val docCount = Arb.int(10..20).single()
-        val docs = doctorArb.take(docCount).mapIndexed {i,d -> d.copy(id = i.toLong())}.toList()
+        val docs = doctorArb.take(docCount).mapIndexed { i, d -> d.copy(id = i.toLong())}.toList()
         every { doctorRepository.findAll() } returns docs.asFlow()
 
         `when`("GET /doctors") {

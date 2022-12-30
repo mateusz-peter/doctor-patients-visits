@@ -1,6 +1,6 @@
 package dev.mtpeter.rsqrecruitmenttask.doctor.handler
 
-import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRouting
+import dev.mtpeter.rsqrecruitmenttask.multitenancy.TenantAwareRouting
 import dev.mtpeter.rsqrecruitmenttask.configuration.TenantAwareRoutingDummy
 import dev.mtpeter.rsqrecruitmenttask.doctor.DoctorRepository
 import dev.mtpeter.rsqrecruitmenttask.doctor.router.DoctorHandler
