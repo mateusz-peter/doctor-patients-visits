@@ -35,7 +35,7 @@ Patients are sorted by `lastName` and `firstName`
   - queryParams: `page` and `size` -- page number and size respectively. Optional, by default it's `page=0` and `size=10`
 - `GET /patients/{id}` -- returns a patient with given `id` with status `Ok`. In case of no patient with that `id`,
 returns `NotFound`, if id isn't a `Long` returns `BadRequest`
-- `POST /patients` -- creates a new patient. If body is a valid `PatientDTO` always returns `Ok` with a saved `Patient` in body 
+- `POST /patients` -- creates a new patient. If body is a valid `PatientDTO` always returns `Created` (+ location header with proper endpoint) with a saved `Patient` in body 
 - `PUT /patients/{id}` -- updates a patient. In case of no patient with given `id` `NotFound` is returned. If body is a
 valid `PatientDTO`, returns updated `Patient` with `Ok` status
 - `DELETE /patient/{id}` -- deletes a patient. `NotFound` returned if a patient with given `id` doesn't exist. `NoContent` on success
