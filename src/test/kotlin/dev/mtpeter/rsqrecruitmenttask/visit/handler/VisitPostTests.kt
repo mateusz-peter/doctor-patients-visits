@@ -31,8 +31,7 @@ fun visitScheduleTests(visitRepository: VisitRepository, webTestClient: WebTestC
 
             then("Ok and return saved visit") {
                 webTestClient.post().uri("/visits").bodyValue(validBody).exchange()
-                    .expectStatus().isCreated
-                    .expectHeader().location("/visits/$visitId")
+                    .expectStatus().isOk
                     .expectBody<Visit>().isEqualTo(validBody.toVisit(visitId))
 
                 coVerify(exactly = 1) {

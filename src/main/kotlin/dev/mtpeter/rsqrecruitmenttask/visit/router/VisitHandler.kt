@@ -38,8 +38,7 @@ class VisitHandler(
             serverRequest.awaitBodyOrNull<VisitDTO>()?.validated() ?: return ServerResponse.badRequest().buildAndAwait()
         val saved = visitService.scheduleVisit(body.toVisit()) ?: return ServerResponse.status(HttpStatus.CONFLICT)
             .buildAndAwait()
-        val location = serverRequest.uriBuilder().path("/${saved.id}").build()
-        return ServerResponse.created(location).bodyValueAndAwait(saved)
+        return ServerResponse.ok().bodyValueAndAwait(saved)
     }
 
     suspend fun rescheduleVisit(serverRequest: ServerRequest): ServerResponse {

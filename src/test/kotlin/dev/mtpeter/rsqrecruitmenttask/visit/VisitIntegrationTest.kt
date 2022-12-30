@@ -58,7 +58,7 @@ class VisitIntegrationTest(
                                 )
                             webTestClient.post().uri("/visits").bodyValue(visit)
                                 .exchange()
-                                .expectStatus().isCreated
+                                .expectStatus().isOk
                                 .expectBody<Visit>()
                                 .returnResult().responseBody!!
                         }
