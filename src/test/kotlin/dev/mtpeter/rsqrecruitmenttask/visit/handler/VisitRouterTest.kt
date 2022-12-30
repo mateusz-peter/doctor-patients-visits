@@ -25,6 +25,7 @@ class VisitRouterTest : BehaviorSpec() {
         include(visitGetAllTest(visitRepository, webTestClient))
         include(visitGetPagedTest(visitRepository, webTestClient))
 
+        include(visitDeleteTest(visitRepository, webTestClient))
         include(visitScheduleTests(visitRepository, webTestClient))
         include(visitRescheduleTests(visitRepository, webTestClient))
     }
