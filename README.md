@@ -18,6 +18,13 @@ dev.mtpeter.rsq:
 Tenant id ("tenantA" or "tenantB" in this case) needs to be provided with each http request in header `X-TenantID`, otherwise `BadRequest` is returned -- 
 there is no default tenant.
 
+Example valid request with tenant:
+```
+curl --request GET \
+  --url http://localhost:8080/patients \
+  --header 'X-TenantID: tenantA'
+```
+
 ## Available endpoints:
 
 Patient endpoints:
