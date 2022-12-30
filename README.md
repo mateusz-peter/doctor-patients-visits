@@ -12,9 +12,10 @@ dev.mtpeter.rsq:
       username: test
       password: test
       url: r2dbc:postgresql://localhost/tenantB
+#   tenantXYZ: [...]
 ```
 
-Tenant id ("tenantA", "tenantB"...) needs to be provided with each http request in header `X-TenantID`, otherwise `BadRequest` is returned -- 
+Tenant id ("tenantA" or "tenantB" in this case) needs to be provided with each http request in header `X-TenantID`, otherwise `BadRequest` is returned -- 
 there is no default tenant.
 
 ## Available endpoints:
