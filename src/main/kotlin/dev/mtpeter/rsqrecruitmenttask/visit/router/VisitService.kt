@@ -36,8 +36,16 @@ class VisitService(
     }
 
     @Transactional
+    suspend fun cancelVisit(id: Long): Boolean {
+        if (!visitRepository.existsById(id)) return false
+        visitRepository.deleteById(id)
+        return true
+    }
+
+    @Transactional
     suspend fun scheduleVisit(visit: Visit): Visit? {
-        val conflictingVisit = visitRepository.findByVisitDateAndVisitTimeAndDoctorId(visit.visitDate, visit.visitTime, visit.doctorId)
+        val conflictingVisit =
+            visitRepository.findByVisitDateAndVisitTimeAndDoctorId(visit.visitDate, visit.visitTime, visit.doctorId)
         if (conflictingVisit != null) return null
 
         return visitRepository.save(visit)
@@ -46,9 +54,13 @@ class VisitService(
     @Transactional
     suspend fun rescheduleVisit(visitToUpdate: Visit): RescheduleResult {
         val existingVisit = visitRepository.findById(visitToUpdate.id!!) ?: return ExistingVisitNotFound
-        if(visitToUpdate.patientId != existingVisit.patientId) return TryingToChangePatient
-        val conflictingVisit = visitRepository.findByVisitDateAndVisitTimeAndDoctorId(visitToUpdate.visitDate, visitToUpdate.visitTime, visitToUpdate.doctorId)
-        if(conflictingVisit != null) return ConflictingVisit
+        if (visitToUpdate.patientId != existingVisit.patientId) return TryingToChangePatient
+        val conflictingVisit = visitRepository.findByVisitDateAndVisitTimeAndDoctorId(
+            visitToUpdate.visitDate,
+            visitToUpdate.visitTime,
+            visitToUpdate.doctorId
+        )
+        if (conflictingVisit != null) return ConflictingVisit
         val saved = visitRepository.save(visitToUpdate)
         return SavedVisit(saved)
     }

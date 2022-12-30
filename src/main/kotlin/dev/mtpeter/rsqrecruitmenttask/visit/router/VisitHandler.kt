@@ -24,18 +24,30 @@ class VisitHandler(
         return ServerResponse.ok().bodyValueAndAwait(page)
     }
 
+    suspend fun cancelVisit(serverRequest: ServerRequest): ServerResponse {
+        val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
+
+        return if (visitService.cancelVisit(id))
+            ServerResponse.noContent().buildAndAwait()
+        else
+            ServerResponse.notFound().buildAndAwait()
+    }
+
     suspend fun scheduleVisit(serverRequest: ServerRequest): ServerResponse {
-        val body = serverRequest.awaitBodyOrNull<VisitDTO>()?.validated() ?: return ServerResponse.badRequest().buildAndAwait()
-        val saved = visitService.scheduleVisit(body.toVisit()) ?: return ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()
+        val body =
+            serverRequest.awaitBodyOrNull<VisitDTO>()?.validated() ?: return ServerResponse.badRequest().buildAndAwait()
+        val saved = visitService.scheduleVisit(body.toVisit()) ?: return ServerResponse.status(HttpStatus.CONFLICT)
+            .buildAndAwait()
         val location = serverRequest.uriBuilder().path("/${saved.id}").build()
         return ServerResponse.created(location).bodyValueAndAwait(saved)
     }
 
     suspend fun rescheduleVisit(serverRequest: ServerRequest): ServerResponse {
         val id = serverRequest.pathVariable("id").toLongOrNull() ?: return ServerResponse.badRequest().buildAndAwait()
-        val body = serverRequest.awaitBodyOrNull<VisitDTO>()?.validated() ?: return ServerResponse.badRequest().buildAndAwait()
+        val body =
+            serverRequest.awaitBodyOrNull<VisitDTO>()?.validated() ?: return ServerResponse.badRequest().buildAndAwait()
 
-        return when(val result = visitService.rescheduleVisit(body.toVisit(id))) {
+        return when (val result = visitService.rescheduleVisit(body.toVisit(id))) {
             is ExistingVisitNotFound -> ServerResponse.notFound().buildAndAwait()
             is TryingToChangePatient -> ServerResponse.badRequest().buildAndAwait()
             is ConflictingVisit -> ServerResponse.status(HttpStatus.CONFLICT).buildAndAwait()

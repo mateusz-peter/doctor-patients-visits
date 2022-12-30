@@ -15,6 +15,7 @@ class VisitRouter {
     ) = coRouter {
         GET("/visits", visitHandler::getAllVisits)
         GET("/visits/paged", visitHandler::getVisitsPaged)
+        DELETE("/visits/{id}", visitHandler::cancelVisit)
         POST("/visits", visitHandler::scheduleVisit)
         PUT("/visits/{id}", visitHandler::rescheduleVisit)
         filter(tenantAwareRouting::tenantAwareFilter)
